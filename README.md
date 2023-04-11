@@ -15,7 +15,7 @@ Englishは作るのめんどいからない!<br>
 また、本家TOHを含む、別MODとの共存はできません。必ず1つのMODを共有して使用してください。
 本家TOHと別の開発者が作成しているので、TOH-Kの問題などに関して本家TOHの方に問い合わせないでください。
 
-家TOHの説明は全てカットします。本家TOHのGitHubからReadMeをご覧ください。(https://github.com/tukasa0001/TownOfHost)
+家TOHの説明は全てカットします。[本家TOHのGitHub](https://github.com/tukasa0001/TownOfHost)からReadMeをご覧ください。
 
 ## リリース
 
