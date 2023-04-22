@@ -154,6 +154,9 @@ namespace TownOfHost
         public static OptionItem DisableDevicesIgnoreCrewmates;
         public static OptionItem DisableDevicesIgnoreAfterAnyoneDied;
 
+        //TOH-k
+        public static OptionItem ShowRoleAtFirstMeeting;
+
         // ランダムマップ
         public static OptionItem RandomMapsMode;
         public static OptionItem AddedTheSkeld;
@@ -602,6 +605,10 @@ namespace TownOfHost
             WhenNonVote = StringOptionItem.Create(100520, "WhenNonVote", voteModes, 0, TabGroup.MainSettings, false).SetParent(VoteMode)
                 .SetGameMode(CustomGameMode.Standard);
             WhenTie = StringOptionItem.Create(100530, "WhenTie", tieModes, 0, TabGroup.MainSettings, false).SetParent(VoteMode)
+                .SetGameMode(CustomGameMode.Standard);
+
+            //TOH-k
+            ShowRoleAtFirstMeeting = BooleanOptionItem.Create(101408, "ShowRoleAtFirstMeeting", false, TabGroup.MainSettings, false)
                 .SetGameMode(CustomGameMode.Standard);
 
             // 全員生存時の会議時間

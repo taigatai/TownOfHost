@@ -317,8 +317,8 @@ namespace TownOfHost
                     roleTextMeeting.text = EvilTracker.GetArrowAndLastRoom(PlayerControl.LocalPlayer, pc);
                     roleTextMeeting.enabled = true;
                 }
-                Utils.SendRoleInfo(pc);
 
+                if (Options.ShowRoleAtFirstMeeting.GetBool() && MeetingStates.FirstMeeting) Utils.SendRoleInfo(pc);
 
             }
             if (Options.SyncButtonMode.GetBool())
