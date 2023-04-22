@@ -53,6 +53,7 @@ namespace TownOfHost
             updateButtonSprite.size *= 1.5f;
             updateButton.SetActive(false);
 
+
 #if !DEBUG
             //フリープレイの無効化
             var freeplayButton = GameObject.Find("/MainUI/FreePlayButton");

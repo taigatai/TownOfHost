@@ -581,6 +581,17 @@ namespace TownOfHost
 
             return sb.ToString();
         }
+        //TOH_Y参考
+        public static string SendRoleInfo(PlayerControl player)
+        {
+            var RoleTextData = GetRoleText(player.PlayerId);
+            var SendRoleInfo = "";
+            var role = player.GetCustomRole();
+            String RoleInfoTitleString = $"{GetString("RoleInfoTitle")}";
+            String RoleInfoTitle = $"{ColorString(RoleTextData.Item2, RoleInfoTitleString)}";
+            SendMessage(GetString(role.ToString()) + player.GetRoleInfo(true), player.PlayerId, title: RoleInfoTitle);
+            return SendRoleInfo;
+        }
 
         public static void ShowHelp()
         {

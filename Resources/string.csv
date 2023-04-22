@@ -528,6 +528,7 @@
 "## その他"
 "DefaultSystemMessageTitle","【===== System Message =====】","【===== システムメッセージ ======】","【===== 系统信息 ======】","【===== 系統訊息 ======】","【=== Системное сообщение ===】","【===== Mensagem do Sistema ======】"
 "MessageFromTheHost","【Message From The Host】","【ホストからの伝言】","【房主消息】","【房主訊息】","【Сообщение от Хоста】",""
+"RoleInfoTitle","【Your role】","【あなたの役職】","【你的角色】","【你的角色】","【ваша роль】","【Seu papel】"
 "TabGroup.MainSettings","Main Settings","メイン設定","主要设置","主要設定","Основная настройка","Configurações Principais"
 "TabGroup.CrewmateRoles","Crewmate Roles","クルー役職","船员阵营职业","","Роли Членов Экипажа","Classes de Tripulante"
 "TabGroup.NeutralRoles","Neutral Roles","ニュートラル役職","独立阵营职业","中立職業設定","Нейтральные Роли","Classes Neutras"
