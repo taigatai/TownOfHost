@@ -381,6 +381,7 @@ namespace TownOfHost
                         break;
                     case CustomRoles.Egoist:
                     case CustomRoles.Jackal:
+                    case CustomRoles.Remotekiller:
                         sb.Append(Snitch.GetWarningMark(seer, target));
                         break;
                     case CustomRoles.EvilTracker:

@@ -166,6 +166,10 @@ namespace TownOfHost
                     case CustomRoles.Vampire:
                         if (!Vampire.OnCheckMurder(killer, target)) return false;
                         break;
+                    case CustomRoles.Remotekiller:
+                        killer.RpcGuardAndKill(target);
+                        Remotekiller.OnCheckMurder(killer, target);
+                        return false;
                     case CustomRoles.Warlock:
                         if (!Main.CheckShapeshift[killer.PlayerId] && !Main.isCurseAndKill[killer.PlayerId])
                         { //Warlockが変身時以外にキルしたら、呪われる処理
@@ -263,10 +267,16 @@ namespace TownOfHost
             }
 
             //When Bait is killed
-            if (target.GetCustomRole() == CustomRoles.Bait && killer.PlayerId != target.PlayerId)
+            if (target.GetCustomRole() == CustomRoles.Bait && killer.PlayerId != target.PlayerId && killer.GetCustomRole() != CustomRoles.AntiBait)
             {
                 Logger.Info(target?.Data?.PlayerName + "はBaitだった", "MurderPlayer");
                 new LateTask(() => killer.CmdReportDeadBody(target.Data), 0.15f, "Bait Self Report");
+            }
+            else
+            if (target.GetCustomRole() == CustomRoles.MadBait && killer.PlayerId != target.PlayerId && !killer.GetCustomRole().IsImpostor())
+            {
+                Logger.Info(target?.Data?.PlayerName + "はMadBaitだった", "MurderPlayer");
+                new LateTask(() => killer.CmdReportDeadBody(target.Data), 0.15f, "MadBait Self Report");
             }
             else
             //Terrorist
@@ -884,8 +894,17 @@ namespace TownOfHost
                     pc?.ReportDeadBody(null);
                 }
             }
+            if (pc.Is(CustomRoles.Remotekiller))
+            {
+                if (Remotekiller.Checktarget1())
+                {
+                    pc?.MyPhysics?.RpcBootFromVent(__instance.Id);
+                    Remotekiller.RemoteKill();
+                }
+            }
         }
     }
+
     [HarmonyPatch(typeof(PlayerPhysics), nameof(PlayerPhysics.CoEnterVent))]
     class CoEnterVentPatch
     {

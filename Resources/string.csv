@@ -30,12 +30,14 @@
 "TimeThief","Time Thief","タイムシーフ","蚀时者","時間小偷","Вор Времени","Ladrão de Tempo"
 "Sniper","Sniper","スナイパー","狙击手","狙擊手","Снайпер","Sniper"
 "EvilTracker","EvilTracker","イビルトラッカー","邪恶的追踪者","邪惡的追蹤者","Злой Следопыт","Rastreador do Mal"
+"AntiBait","AntiBait","アンチベイト","","","",""
 
 "# マッドメイト系役職"
 "Madmate","Madmate","マッドメイト","叛徒","叛徒","Безумец","Tripulante Louco"
 "MadGuardian","Mad Guardian","マッドガーディアン","背叛的守卫","背叛的天使","Безумный Страж","Guardião Louco"
 "MadSnitch","Mad Snitch","マッドスニッチ","背叛的告密者","背叛的告密者","Безумный Стукач","Dedo-Duro Louco"
 "SKMadmate","Sidekick Madmate","サイドキックマッドメイト","叛徒跟班","叛徒跟班","Союзник Безумца","Tripulante Louco Ajudante"
+"MadBait","MadBait","マッドベイト","疯狂的诱饵","瘋狂的誘餌","сумасшедшая приманка","isca louca"
 
 "# 両陣営可能役職"
 "Watcher","Watcher","ウォッチャー","窥视者","觀察者","Наблюдатель","Observador"
@@ -55,6 +57,7 @@
 "Dictator","Dictator","ディクテーター","独裁者","獨裁主義者","Диктатор","Ditador"
 "Seer","Seer","シーア","灵媒","靈媒","Провидец","Vidente"
 "TimeManager","TimeManager","タイムマネージャー","时间管理者","時間大師","Мастер Времени",""
+"VentMaster","VentMaster","ベントマスター","通风大师","通风大师","ВентМастер","Vent Master"
 
 "# ニュートラル役職"
 "Jester","Jester","ジェスター","小丑","小丑","Шут","Bobo"
@@ -69,6 +72,7 @@
 "Egoist","Egoist","エゴイスト","野心家","利己主義者","Эгоист","Egoísta"
 "Lovers","Lovers","恋人","恋人","戀人","Любовники","Amantes"
 "Jackal","Jackal","ジャッカル","豺狼","豺狼","Шакал","Chacal"
+"Remotekiller","Remotekiller","リモートキラー","","","",""
 
 "# HideAndSeek"
 "HASFox","Fox","狐","狐狸","狐妖","Лис","Raposa"
@@ -114,6 +118,7 @@
 "MadGuardianInfo","Finish your tasks and help the Impostors","タスクを済ませ、インポスターの援助をしよう","完成任务后来帮助内鬼","完成你的任務並幫助偽裝者","Завершите свои задания чтобы помочь Предателям","Termine as suas tarefas e ajude os Impostores"
 "MadSnitchInfo","Finish your tasks and help the Impostors","タスクを済ませ、インポスターの援助をしよう","完成任务后来帮助内鬼","完成你的任務並幫助偽裝者","Завершите свои задания чтобы помочь Предателям","Termine as suas tarefas e ajude os Impostores"
 "SKMadmateInfo","You are now on Team Impostors","サイドキックにされた","你是内鬼的好帮手","你現在是偽裝者的夥伴了，盡你所能幫助他們","Теперь вы в команде Предателя","Você agora está no Time Impostor"
+"MadBaitInfo","Bait your enemies","敵を罠にはめよう","诱骗敌人，让敌人落入你的陷阱","犧牲小我，完成大我","Убийца моментально зарепортит ваш труп","Engane os seus inimigos"
 
 "# 両陣営可能役職"
 "WatcherInfo","Gaze upon all votes","みんなの投票に目を光らせよう","你可以看见所有人的投票，注意他们的选择","注意所有人的投票","Вы видите цвета голосов","Veja todos os votos"
@@ -131,6 +136,7 @@
 "DictatorInfo","Decide who to eject","独裁政治をしよう","让我统治世界，拥有无上的权利","讓所有人臣服於你","Повесьте своего врага на страх и риск","Escolha quem será exilado"
 "SeerInfo","You see the moment someone dies","他人の死んだ瞬間がわかる","你能感知死亡","你擁有陰陽眼","Вы видите когда умирают игроки","Veja o momento em que alguém morre"
 "TimeManagerInfo","Do the tasks and extend meeting time","タスクをして会議時間を延ばそう","完成任务并延长会议持续时间","完成你的任務來延長會議時間","Выполняйте задания чтобы увеличить время встречи",""
+"VentMasterInfo","put in vent","ベントに入れる","放在通风口","放在通風口","положить в вентиляцию","colocar na ventilação"
 
 "# ニュートラル役職"
 "ArsonistInfo","Burn them to crisps","燃やせ","火焰给我燃烧起来吧！","燒吧，燒吧，燃燒吧","Облейте и подожгите всех игроков","Queime tudo em pedacinhos"
@@ -180,6 +186,7 @@
 "MadGuardianInfoLong","(Impostors):\nYou are a crewmate, but you act as the impostors' ally.\nYou and the impostors cannot recognize each other.\nOnce you finish your tasks, you will be shielded from impostor kills.","(インポスター陣営):\nクルーだがインポスターの味方をする。\nインポスターと互いに認識できない。\nタスクを全て完了させるとｼｰﾙﾄﾞが付与される。","(内鬼阵营):\n背叛的守卫不可以击杀、破坏或使用管道。\n背叛的守卫完成任务之后，可以免疫所有击杀。","(狼人陣營):\n船員,但是他們屬於狼人陣營.\n狼人和他們無法互相知道誰是叛徒,誰是狼\n當背叛的天使完成所有任務時,他將有一個盾牌。","(Предатель):\nЧлен Экипажа, который на стороне Предателей. \nНо он не знает кто является Предателем в игре. \nЕсли он выполнит все задания, то он получит щит, с помощью которого он может предотвратить свое убийство.","(Impostores):\nVocê é um tripulante que se aliou ao impostor.\nOs Impostores não sabem quem você é e vice-versa.\nQuando terminar as suas tarefas, o Impostor não poderá te matar."
 "MadSnitchInfoLong","(Impostors):\nYou are a crewmate, but you act as the impostors' ally.\nYou and the impostors cannot recognize each other, but once you finish all tasks, you can see who the impostors are.","(インポスター陣営):\nクルーだがインポスターの味方をする。\nインポスターと互いに認識できないが、タスクを全て完了させるとマッドスニッチからインポスターを認識できるようになる。","(内鬼阵营):\n背叛的告密者与内鬼不互认，不可以击杀、破坏或者使用管道。\n背叛的告密者完成所有任务之后，其与内鬼互认。","(狼人陣營):\n船員,但是他們屬於狼人陣營.\n狼人和他們無法互相知道誰是叛徒,誰是狼\n當背叛的告密者做完任務時,狼人和背叛的告密者將可以互相知道對方。","(Предатель):\nЧлен Экипажа, который на стороне Предателей. \nОн может увидеть, кто является Предателем, после того как выполнит все свои задания. \nВ зависимости от настроек он может использовать вентиляцию.","(Impostores):\nVocê é um tripulante que se aliou ao impostor.\nOs Impostores não sabem quem você é e vice-versa.\nQuando terminar as suas tarefas, você poderá ver quem é o Impostor."
 "SKMadmateInfoLong","(Impostors):\nThe player closest to a Shapeshifter when they shapeshift will become a Sidekick Madmate. You have no tasks.","(インポスター陣営):\n変身した際に一番近かった人がなれる役職。タスクはない。","(内鬼阵营):\n一些内鬼职业变形时，其附近的与其距离最近的玩家的职业有概率转化为该职业。\n叛徒跟班与内鬼不互认。","(狼人陣營):\n當狼人變形時\n離狼人變形最近的一個人將有機率轉化為叛徒跟班\n他沒有任務,且叛徒跟班與狼人無法互相知道。","(Предатель):\nРоль, которую может занять ближайший к вам игрок, когда вы используете Морф. Нет заданий.","(Impostores):\nO jogador mais próximo de um Metamorfo quando eles se transformam virará um Tripulante Louco Ajudante. Você não tem tarefas."
+"MadBaitInfoLong","(Crewmates):\nWhen killed, you can force the person who killed you, excluding the Impostor Faction,\nto self-report.","(クルー陣営):\nキルされた時に、インポスター陣営を除く自身をキルした人に\n強制的にセルフレポートさせる事ができる。","（船员）:\n被杀时，你可以强迫杀死你的人（冒名顶替派除外）自我报告。","（船員）:\n被殺時，你可以強迫殺死你的人（冒名頂替派除外）自我報告。","(Соратники): \nКогда вас убивают, вы можете заставить человека, \nубившего вас, за исключением фракции Самозванцев, сообщить о себе.","(Crewmates): Quando morto, você pode forçar a pessoa que o matou,\n excluindo a Facção do Impostor, a se autodenunciar."
 
 "# 両陣営可能役職"
 "WatcherInfoLong","(Impostors or Crewmates):\nYou can see everyone's votes even if anonymous voting is on.","(インポスターorクルー陣営):\n全員の投票先を見ることができる。","(内鬼阵营或船员阵营):\n会议时窥视者可以看到所有人的投票。","(狼人或船員):\n會議時觀察者可以看到所有人的投票。","(Предатель или Член Экипажа):\nНаблюдатель может видеть все цвета голосов несмотря на анонимное голосование.","(Impostores ou Tripulantes):\nVocê consegue ver os votos de todos, mesmo que os votos anônimos estejam ligados."
@@ -199,7 +206,8 @@
 "TrapperInfoLong","(Crewmates):\nWhen you are killed, you immobilize your killer for a configurable amount of time.","(クルー陣営):\nキルされると、キルした人を数秒間移動不可にすることができる。(設定有)","(船员阵营):\n陷阱师被击杀时，凶手一段时间内将不能移动。","(船員):\n如果設限者被殺,殺他的兇手將會被困在原地幾秒(可以設定)","(Член Экипажа):\nПосле того как Охотника убьют, то его убийца будет обездвижен на несколько секунд. (время зависит от настроек)","(Tripulantes): \nAo ser morto, imobilize o seu assassino por um certo período. (configurável)"
 "DictatorInfoLong","(Crewmates):\nWhen you vote someone, the meeting will end on the spot and the player you voted will be ejected.\nThe moment you vote someone out, you will also die.\nWhen you vote for someone in a meeting, they forcibly break that meeting and exile the player they vote for.\nAfter exercising the force, the Dictators die just after meeting.","(クルー陣営):\n会議中に誰かに投票をすると、会議を強制終了させて投票先を吊る事ができる。\n投票したタイミングでディクテーターは死ぬ。","(船员阵营):\n当独裁者在会议阶段投票给玩家后，会议会被强制结束并放逐其投票对象。\n该技能发动后独裁者将会死亡。","(船員):\n如果獨裁主義者在會議上投票給某位玩家,\n獨裁主義者將強制結束會議並無視場上票數將獨裁主義者投的那個人投出\n但是獨裁主義者將死於他投票的瞬間。","(Член Экипажа):\nЕсли Диктатор проголосует за любого игрока во время собрания, он сможет принудительно завершить собрание и кикнуть игрока за которого он отдал голос \nТак же Диктатор умрёт после собрания когда он отдаст голос.","(Tripulantes): \nQuando votar em alguém, durante uma reunião, a reunião será encerrada e a pessoa em que você votou, será exilada. \nAo exilar alguém, você morre-rá."
 "SeerInfoLong","(Crewmates):\nWhenever someone dies, you will see a ""kill flash"".","(クルー陣営):\nプレイヤーが死亡するごとに、シーアはキルフラッシュを見ることができる。","(船员阵营):\n每当玩家死亡时，灵媒将会看到击杀闪烁。","(船員):當有玩家死亡時,靈媒將看到閃光","(Член Экипажа):\nПровидец видит ''Вспышку Убийства'' каждый раз, когда игроки умирают.","(Tripulantes): \nQuando alguém morre, você vê um ""clarão de abate"" (a sua tela piscará brevemente)."
-"TimeManagerInfoLong","(Crewmates):The more tasks you do, the longer your meeting will last. When you die, the meeting time will be restored.","(クルー陣営):\nタスクを終わらせるごとに会議時間が延びる。死亡すると会議時間は元に戻る。","(船员阵营):\n你做的任务越多，会议时间就会越长。在你死后，会议时间会复原。","","(Член Экипажа):\nМастер Времени может увеличить время встречи, увеличивается время по мере выполнения заданий. Но когда он умрет, время встречи будет сброшено по умолчанию.",""
+"TimeManagerInfoLong","(Crewmates):\nThe more tasks you do, the longer your meeting will last. When you die, the meeting time will be restored.","(クルー陣営):\nタスクを終わらせるごとに会議時間が延びる。死亡すると会議時間は元に戻る。","(船员阵营):\n你做的任务越多，会议时间就会越长。在你死后，会议时间会复原。","","(Член Экипажа):\nМастер Времени может увеличить время встречи, увеличивается время по мере выполнения заданий. Но когда он умрет, время встречи будет сброшено по умолчанию.",""
+"VentMasterInfoLong","(Crewmates):\nCrew faction but can enter the vent","(クルー陣営):\nクルー陣営だがベントに入ることができる","(船员阵营):\n船员派系但可以进入通风口","(船員):\n船員派系但可以進入通風口","(Член Экипажа):\nФракция экипажа, но может войти в вентиляционное отверстие","(Tripulantes):\nFacção da tripulação, mas pode entrar na ventilação"
 
 "# ニュートラル役職"
 "ArsonistInfoLong","(Neutrals):\nWhen you use the kill button, you douse your target in oil.\nAfter dousing all living players, you set everything ablaze and win by venting.","(ニュートラル):\nキルボタンを使おうとすると、ターゲットに油を塗れる。\nすべてのクルーに油を塗ったら船を燃やして勝利する。","(独立阵营):\n纵火犯可以通过对玩家点击击杀按钮并在跟随其数秒来完成涂油行为。\n当所有存活玩家都被纵火犯涂油后，纵火犯可以通过跳通风管来点火，并单独获得胜利。","(中立):\n當縱火犯嘗試使用殺人鍵,它將對他身邊最近的一個人澆上油,\n當他對所有玩家澆上油之後,縱火縱火犯點火即勝利。","(Нейтрал):\nПоджигатель может обливать игроков, нажав на кнопку 'Убить' и находясь рядом с игроком в течение нескольких секунд. \nПосле того как он обольёт всех живых игроков Поджигатель сможет запрыгнуть в вентиляцию, чтобы поджечь всех игроков, что приводит к победе Поджигателя.","(Neutros):\nAo apertar o botão de matar, você encharca o seu inimigo em óleo.\nApós ter encharcado todos os jogadores vivos, você coloca tudo em chamas e ganha entrando na ventilação."

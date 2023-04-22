@@ -192,6 +192,7 @@ namespace TownOfHost
                 AssignDesyncRole(CustomRoles.Sheriff, AllPlayers, senders, rolesMap, BaseRole: RoleTypes.Impostor);
                 AssignDesyncRole(CustomRoles.Arsonist, AllPlayers, senders, rolesMap, BaseRole: RoleTypes.Impostor);
                 AssignDesyncRole(CustomRoles.Jackal, AllPlayers, senders, rolesMap, BaseRole: RoleTypes.Impostor);
+                AssignDesyncRole(CustomRoles.Remotekiller, AllPlayers, senders, rolesMap, BaseRole: RoleTypes.Impostor);
                 MakeDesyncSender(senders, rolesMap);
             }
             //以下、バニラ側の役職割り当てが入る
@@ -286,7 +287,7 @@ namespace TownOfHost
                 {
                     if (role.IsVanilla()) continue;
                     if (role is CustomRoles.HASFox or CustomRoles.HASTroll) continue;
-                    if (role is CustomRoles.Sheriff or CustomRoles.Arsonist or CustomRoles.Jackal) continue;
+                    if (role is CustomRoles.Sheriff or CustomRoles.Arsonist or CustomRoles.Jackal or CustomRoles.Remotekiller) continue;
                     if (role == CustomRoles.Egoist && Main.RealOptionsData.GetInt(Int32OptionNames.NumImpostors) <= 1) continue;
                     var baseRoleTypes = role.GetRoleTypes() switch
                     {
@@ -597,7 +598,7 @@ namespace TownOfHost
             foreach (var role in Enum.GetValues(typeof(CustomRoles)).Cast<CustomRoles>().Where(x => x < CustomRoles.NotAssigned))
             {
                 if (role.IsVanilla()) continue;
-                if (role is CustomRoles.Sheriff or CustomRoles.Arsonist or CustomRoles.Jackal) continue;
+                if (role is CustomRoles.Sheriff or CustomRoles.Arsonist or CustomRoles.Jackal or CustomRoles.Remotekiller) continue;
                 if (role == CustomRoles.Egoist && Main.NormalOptions.GetInt(Int32OptionNames.NumImpostors) <= 1) continue;
                 if (role.GetRoleTypes() == roleTypes)
                     count += role.GetCount();

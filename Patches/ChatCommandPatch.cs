@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Assets.CoreScripts;
 using HarmonyLib;
 using Hazel;
@@ -53,6 +55,7 @@ namespace TownOfHost
                 Main.isChatCommand = true;
                 switch (args[0])
                 {
+
                     case "/win":
                     case "/winner":
                         canceled = true;
@@ -65,6 +68,18 @@ namespace TownOfHost
                         Utils.ShowLastResult();
                         break;
 
+                    case "/w":
+                        canceled = true;
+                        Utils.ShowLastWins();
+                        break;
+
+                    case "/timer":
+                    case "/tr":
+                        canceled = true;
+                        if (!GameStates.IsInGame)
+                            Utils.ShowTimer();
+                        break;
+
                     case "/kl":
                     case "/killlog":
                         canceled = true;
@@ -74,7 +89,14 @@ namespace TownOfHost
                     case "/r":
                     case "/rename":
                         canceled = true;
-                        Main.nickName = args.Length > 1 ? Main.nickName = args[1] : "";
+                        var name = string.Join(" ", args.Skip(1)).Trim();
+                        if (string.IsNullOrEmpty(name))
+                        {
+                            Main.nickName = "";
+                            break;
+                        }
+                        if (name.StartsWith(" ")) break;
+                        Main.nickName = name;
                         break;
 
                     case "/hn":
@@ -235,6 +257,15 @@ namespace TownOfHost
                         Utils.GetPlayerById(id)?.RpcExileV2();
                         break;
 
+                    case "/forceend":
+                    case "/fe":
+                        canceled = true;
+                        Utils.SendMessage("ホストから強制終了コマンドが入力されました");
+                        GameManager.Instance.enabled = false;
+                        CustomWinnerHolder.WinnerTeam = CustomWinner.None;
+                        GameManager.Instance.RpcEndGame(GameOverReason.ImpostorByKill, false);
+                        break;
+
                     case "/kill":
                         canceled = true;
                         if (args.Length < 2 || !int.TryParse(args[1], out int id2)) break;
@@ -244,6 +275,14 @@ namespace TownOfHost
                     default:
                         Main.isChatCommand = false;
                         break;
+
+                    case "/test":
+                        canceled = true;
+                        __instance.AddChat(PlayerControl.LocalPlayer, "kyが作ったテストコマンド");
+                        cancelVal = "テストだよ";
+                        break;
+
+
                 }
             }
             if (canceled)
@@ -261,7 +300,7 @@ namespace TownOfHost
             var roleList = new Dictionary<CustomRoles, string>
             {
                 //GM
-                { CustomRoles.GM, "gm" },
+                { CustomRoles.GM, "gm"},
                 //Impostor役職
                 { (CustomRoles)(-1), $"== {GetString("Impostor")} ==" }, //区切り用
                 { CustomRoles.BountyHunter, "bo" },
@@ -277,12 +316,16 @@ namespace TownOfHost
                 { CustomRoles.Vampire, "va" },
                 { CustomRoles.Warlock, "wa" },
                 { CustomRoles.Witch, "wi" },
+                //TOH-K
+                { CustomRoles.AntiBait, "ab"},
                 //Madmate役職
                 { (CustomRoles)(-2), $"== {GetString("Madmate")} ==" }, //区切り用
                 { CustomRoles.MadGuardian, "mg" },
                 { CustomRoles.Madmate, "mm" },
                 { CustomRoles.MadSnitch, "msn" },
                 { CustomRoles.SKMadmate, "sm" },
+                //TOH-K
+                { CustomRoles.MadBait, "mb"},
                 //両陣営役職
                 { (CustomRoles)(-3), $"== {GetString("Impostor")} or {GetString("Crewmate")} ==" }, //区切り用
                 { CustomRoles.Watcher, "wat" },
@@ -300,6 +343,8 @@ namespace TownOfHost
                 { CustomRoles.SpeedBooster, "sb" },
                 { CustomRoles.Trapper, "tra" },
                 { CustomRoles.TimeManager, "tm"},
+                //TOH-K
+                { CustomRoles.VentMaster, "ve"},
                 //Neutral役職
                 { (CustomRoles)(-5), $"== {GetString("Neutral")} ==" }, //区切り用
                 { CustomRoles.Arsonist, "ar" },
@@ -310,6 +355,8 @@ namespace TownOfHost
                 { CustomRoles.SchrodingerCat, "sc" },
                 { CustomRoles.Terrorist, "te" },
                 { CustomRoles.Jackal, "jac" },
+                //TOH-K
+                { CustomRoles.Remotekiller, "rk"},
                 //属性
                 { (CustomRoles)(-6), $"== {GetString("Addons")} ==" }, //区切り用
                 {CustomRoles.Lovers, "lo" },
@@ -362,6 +409,16 @@ namespace TownOfHost
                 case "/l":
                 case "/lastresult":
                     Utils.ShowLastResult(player.PlayerId);
+                    break;
+
+                case "/w":
+                    Utils.ShowLastWins(player.PlayerId);
+                    break;
+
+                case "/timer":
+                case "/tr":
+                    if (!GameStates.IsInGame)
+                        Utils.ShowTimer(player.PlayerId);
                     break;
 
                 case "/kl":

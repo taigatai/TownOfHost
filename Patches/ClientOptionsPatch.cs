@@ -10,6 +10,7 @@ namespace TownOfHost
         private static Vector3? origin;
         private static ToggleButtonBehaviour ForceJapanese;
         private static ToggleButtonBehaviour JapaneseRoleName;
+        private static ToggleButtonBehaviour Japanesecommand;
         public static float xOffset = 1.75f;
         public static float yOffset = -0.25f;
         private static void UpdateToggle(ToggleButtonBehaviour button, string text, bool on)
@@ -82,6 +83,16 @@ namespace TownOfHost
                 {
                     Main.JapaneseRoleName.Value = !Main.JapaneseRoleName.Value;
                     UpdateToggle(JapaneseRoleName, "Japanese Role Name: ", Main.JapaneseRoleName.Value);
+                }
+            }
+            if (Japanesecommand == null || Japanesecommand.gameObject == null)
+            {
+                Japanesecommand = CreateCustomToggle("Japanese command: ", Main.Japanesecommand.Value, new Vector3(-0.375f, yOffset - 0.375f, 0), (UnityEngine.Events.UnityAction)JapanesecommandButtonToggle, __instance);
+
+                void JapanesecommandButtonToggle()
+                {
+                    Main.Japanesecommand.Value = !Main.Japanesecommand.Value;
+                    UpdateToggle(Japanesecommand, "Japanese command: ", Main.Japanesecommand.Value);
                 }
             }
         }

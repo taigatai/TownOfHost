@@ -21,6 +21,10 @@ namespace TownOfHost
     //タイマーとコード隠し
     public class GameStartManagerPatch
     {
+        public static float GetTimer()
+        {
+            return timer;
+        }
         private static float timer = 600f;
         [HarmonyPatch(typeof(GameStartManager), nameof(GameStartManager.Start))]
         public class GameStartManagerStartPatch
@@ -137,7 +141,6 @@ namespace TownOfHost
                 if (!AmongUsClient.Instance.AmHost || !GameData.Instance) return;
 
                 if (update) currentText = __instance.PlayerCounter.text;
-
                 timer = Mathf.Max(0f, timer -= Time.deltaTime);
                 int minutes = (int)timer / 60;
                 int seconds = (int)timer % 60;
@@ -147,6 +150,8 @@ namespace TownOfHost
                 __instance.PlayerCounter.text = currentText + suffix;
                 __instance.PlayerCounter.autoSizeTextContainer = true;
             }
+
+
             private static bool MatchVersions(byte playerId, bool acceptVanilla = false)
             {
                 if (!Main.playerVersion.TryGetValue(playerId, out var version)) return acceptVanilla;

@@ -169,6 +169,10 @@ namespace TownOfHost
                     PlayerControl.LocalPlayer.Data.Role.IntroSound = GetIntroSound(RoleTypes.Crewmate);
                     break;
 
+                case CustomRoles.VentMaster:
+                    PlayerControl.LocalPlayer.Data.Role.IntroSound = GetIntroSound(RoleTypes.Crewmate);
+                    break;
+
                 case CustomRoles.GM:
                     __instance.TeamTitle.text = Utils.GetRoleName(role);
                     __instance.TeamTitle.color = Utils.GetRoleColor(role);
@@ -178,23 +182,23 @@ namespace TownOfHost
 
             }
 
-            if (Input.GetKey(KeyCode.RightShift))
-            {
-                __instance.TeamTitle.text = Main.ModName;
-                __instance.ImpostorText.gameObject.SetActive(true);
-                __instance.ImpostorText.text = "https://github.com/tukasa0001/TownOfHost" +
-                    "\r\nOut Now on Github";
-                __instance.TeamTitle.color = Color.cyan;
-                StartFadeIntro(__instance, Color.cyan, Color.yellow);
-            }
-            if (Input.GetKey(KeyCode.RightControl))
-            {
-                __instance.TeamTitle.text = "Discord Server";
-                __instance.ImpostorText.gameObject.SetActive(true);
-                __instance.ImpostorText.text = "https://discord.gg/v8SFfdebpz";
-                __instance.TeamTitle.color = Color.magenta;
-                StartFadeIntro(__instance, Color.magenta, Color.magenta);
-            }
+            //if (Input.GetKey(KeyCode.RightShift))
+            //{
+            //    __instance.TeamTitle.text = Main.ModName;
+            //    __instance.ImpostorText.gameObject.SetActive(true);
+            //    __instance.ImpostorText.text = "https://github.com/tukasa0001/TownOfHost" +
+            //        "\r\nOut Now on Github";
+            //    __instance.TeamTitle.color = Color.cyan;
+            //    StartFadeIntro(__instance, Color.cyan, Color.yellow);
+            //}
+            //if (Input.GetKey(KeyCode.RightControl))
+            //{
+            //    __instance.TeamTitle.text = "Discord Server";
+            //    __instance.ImpostorText.gameObject.SetActive(true);
+            //    __instance.ImpostorText.text = "https://discord.gg/v8SFfdebpz";
+            //    __instance.TeamTitle.color = Color.magenta;
+            //    StartFadeIntro(__instance, Color.magenta, Color.magenta);
+            //}
         }
         private static AudioClip GetIntroSound(RoleTypes roleType)
         {
@@ -286,6 +290,7 @@ namespace TownOfHost
                 }
             }
             Logger.Info("OnDestroy", "IntroCutscene");
+
         }
     }
 }

@@ -53,27 +53,16 @@ namespace TownOfHost
             updateButtonSprite.size *= 1.5f;
             updateButton.SetActive(false);
 
+#if !DEBUG
             //フリープレイの無効化
             var freeplayButton = GameObject.Find("/MainUI/FreePlayButton");
             if (freeplayButton != null)
             {
                 freeplayButton.GetComponent<PassiveButton>().OnClick = new();
-                freeplayButton.GetComponent<PassiveButton>().OnClick.AddListener((Action)(() => Application.OpenURL("https://github.com/tukasa0001/TownOfHost")));
+                freeplayButton.GetComponent<PassiveButton>().OnClick.AddListener((Action)(() => Application.OpenURL("https://github.com/KYMario/TownOfHost-K")));
                 __instance.StartCoroutine(Effects.Lerp(0.01f, new Action<float>((p) => freeplayButton.transform.GetChild(0).GetComponent<TMPro.TMP_Text>().SetText("GitHub"))));
             }
-        }
-    }
-    [HarmonyPatch(typeof(AnnouncementPopUp), nameof(AnnouncementPopUp.UpdateAnnounceText))]
-    public static class Announcement
-    {
-        public static bool Prefix(AnnouncementPopUp __instance)
-        {
-            var text = __instance.AnnounceTextMeshPro;
-            text.text = "<size=2.5><color=#00c1ff>TownOfHost-K</color>!"
-            + "\n <color=#ff6633>動作テストバージョン </color></size>"
-
-            + "</color></size>";
-            return false;
+#endif
         }
     }
 

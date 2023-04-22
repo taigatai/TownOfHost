@@ -256,6 +256,9 @@ namespace TownOfHost
                 case CustomRoles.Jackal:
                     Jackal.SetHudActive(__instance, isActive);
                     break;
+                case CustomRoles.Remotekiller:
+                    __instance.SabotageButton.ToggleVisible(false);
+                    break;
             }
             __instance.KillButton.ToggleVisible(player.CanUseKillButton());
             __instance.ImpostorVentButton.ToggleVisible(player.CanUseImpostorVentButton());
@@ -271,7 +274,7 @@ namespace TownOfHost
             if (opts.Mode is MapOptions.Modes.Normal or MapOptions.Modes.Sabotage)
             {
                 var player = PlayerControl.LocalPlayer;
-                if (player.Is(CustomRoleTypes.Impostor) || (player.Is(CustomRoles.Jackal) && Jackal.CanUseSabotage.GetBool()))
+                if (player.Is(CustomRoleTypes.Impostor) || (player.Is(CustomRoles.Jackal) && Jackal.CanUseSabotage.GetBool()) || (player.Is(CustomRoles.Remotekiller)))
                     opts.Mode = MapOptions.Modes.Sabotage;
                 else
                     opts.Mode = MapOptions.Modes.Normal;

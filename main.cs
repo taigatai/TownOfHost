@@ -29,9 +29,9 @@ namespace TownOfHost
         // フォークID / ForkId (Default: OriginalTOH)
         public static readonly string ForkId = "TOH-K";
         // Discordボタンを表示するか / Show Discord Button (Default: true)
-        public static readonly bool ShowDiscordButton = false;
+        public static readonly bool ShowDiscordButton = true;
         // Discordサーバーの招待リンク / Discord Server Invite URL (Default: https://discord.gg/W5ug6hXB9V)
-        public static readonly string DiscordInviteUrl = "";
+        public static readonly string DiscordInviteUrl = "https://discord.gg/5DPqH8seFq";
         // ==========
         public const string OriginalForkId = "OriginalTOH"; // Don't Change The Value. / この値を変更しないでください。
         // == 認証設定 / Authentication Config ==
@@ -47,7 +47,7 @@ namespace TownOfHost
         // ==========
         //Sorry for many Japanese comments.
         public const string PluginGuid = "com.emptybottle.townofhost";
-        public const string PluginVersion = "1.0.0";
+        public const string PluginVersion = "0.0.31";
         public Harmony Harmony { get; } = new Harmony(PluginGuid);
         public static Version version = Version.Parse(PluginVersion);
         public static BepInEx.Logging.ManualLogSource Logger;
@@ -62,6 +62,7 @@ namespace TownOfHost
         public static ConfigEntry<string> HideColor { get; private set; }
         public static ConfigEntry<bool> ForceJapanese { get; private set; }
         public static ConfigEntry<bool> JapaneseRoleName { get; private set; }
+        public static ConfigEntry<bool> Japanesecommand { get; private set; }
         public static ConfigEntry<int> MessageWait { get; private set; }
 
         public static Dictionary<byte, PlayerVersion> playerVersion = new();
@@ -134,10 +135,11 @@ namespace TownOfHost
             Instance = this;
 
             //Client Options
-            HideName = Config.Bind("Client Options", "Hide Game Code Name", "Town Of Host");
+            HideName = Config.Bind("Client Options", "Hide Game Code Name", "Town Of Host-K");
             HideColor = Config.Bind("Client Options", "Hide Game Code Color", $"{ModColor}");
             ForceJapanese = Config.Bind("Client Options", "Force Japanese", false);
             JapaneseRoleName = Config.Bind("Client Options", "Japanese Role Name", true);
+            Japanesecommand = Config.Bind("Client Options", "Japanese command", false);
             DebugKeyInput = Config.Bind("Authentication", "Debug Key", "");
 
             Logger = BepInEx.Logging.Logger.CreateLogSource("TownOfHost");
@@ -216,6 +218,8 @@ namespace TownOfHost
                     {CustomRoles.CSchrodingerCat, "#ffffff"}, //シュレディンガーの猫の派生
                     {CustomRoles.Seer, "#61b26c"},
                     {CustomRoles.TimeManager, "#6495ed"},
+                    //TOH-K
+                    {CustomRoles.VentMaster, "#ff6666"},
                     //ニュートラル役職
                     {CustomRoles.Arsonist, "#ff6633"},
                     {CustomRoles.Jester, "#ec62a5"},
@@ -227,6 +231,8 @@ namespace TownOfHost
                     {CustomRoles.EgoSchrodingerCat, "#5600ff"},
                     {CustomRoles.Jackal, "#00b4eb"},
                     {CustomRoles.JSchrodingerCat, "#00b4eb"},
+                    //TOH-K
+                    {CustomRoles.Remotekiller, "#8f00ce"},
                     //HideAndSeek
                     {CustomRoles.HASFox, "#e478ff"},
                     {CustomRoles.HASTroll, "#00ff00"},
@@ -298,11 +304,15 @@ namespace TownOfHost
         Puppeteer,
         TimeThief,
         EvilTracker,
+        //TOH-k
+        AntiBait,
+        Remotekiller,
         //Madmate
         MadGuardian,
         Madmate,
         MadSnitch,
         SKMadmate,
+        MadBait,
         MSchrodingerCat,//インポスター陣営のシュレディンガーの猫
         //両陣営
         Watcher,
@@ -325,6 +335,8 @@ namespace TownOfHost
         Seer,
         TimeManager,
         CSchrodingerCat,//クルー陣営のシュレディンガーの猫
+        //TOH-K
+        VentMaster,
         //Neutral
         Arsonist,
         Egoist,
@@ -362,6 +374,7 @@ namespace TownOfHost
         Arsonist = CustomRoles.Arsonist,
         Egoist = CustomRoles.Egoist,
         Jackal = CustomRoles.Jackal,
+        Remotekiller = CustomRoles.Remotekiller,
         HASTroll = CustomRoles.HASTroll,
     }
     public enum AdditionalWinners
