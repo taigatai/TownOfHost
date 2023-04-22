@@ -41,6 +41,6 @@ AmongUsバージョン : **2022.12.14**
 | /w<br>                        | 勝利した役職名を表示        |
 | /timer<br>/tr                 | 部屋落ちタイマーを表示      |
 
-参考など
+#### 参考など
 [TownOfHost_Y](https://github.com/Yumenopai/TownOfHost_Y)
 
