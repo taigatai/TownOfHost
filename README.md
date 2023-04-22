@@ -3,7 +3,6 @@
 [![Discord](./Images/TownOfHost-Discord.png)](https://discord.gg/5DPqH8seFq)
 
 Englishはいつか作る<br>
-ソースコードはリリースにありまあす上のソースコードは更新しない予定です。
 
 <p align="center"><a href="https://github.com/KYMario/TownOfHost-K/releases/"><img src="https://badgen.net/github/release/KYMario/TownOfHost-K"></a></p>
 
