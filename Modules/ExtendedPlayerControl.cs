@@ -387,7 +387,7 @@ namespace TownOfHost
                 CustomRoles.Sniper => Sniper.CanUseKillButton(pc),
                 CustomRoles.Sheriff => Sheriff.CanUseKillButton(pc.PlayerId),
                 CustomRoles.Arsonist => !pc.IsDouseDone(),
-                CustomRoles.Egoist or CustomRoles.Jackal => true,
+                CustomRoles.Egoist or CustomRoles.Jackal or CustomRoles.Remotekiller => true,
                 _ => pc.Is(CustomRoleTypes.Impostor),
             };
         }
@@ -400,6 +400,7 @@ namespace TownOfHost
                 CustomRoles.Sheriff => false,
                 CustomRoles.Egoist => true,
                 CustomRoles.Jackal => Jackal.CanVent.GetBool(),
+                CustomRoles.Remotekiller => true,
                 CustomRoles.Arsonist => pc.IsDouseDone(),
                 _ => pc.Is(CustomRoleTypes.Impostor),
             };
@@ -442,6 +443,9 @@ namespace TownOfHost
                     break;
                 case CustomRoles.Jackal:
                     Jackal.SetKillCooldown(player.PlayerId);
+                    break;
+                case CustomRoles.Remotekiller:
+                    Remotekiller.SetKillCooldown(player.PlayerId);
                     break;
                 case CustomRoles.Sheriff:
                     Sheriff.SetKillCooldown(player.PlayerId); //シェリフはシェリフのキルクールに。
@@ -532,7 +536,8 @@ namespace TownOfHost
             return
                 player.GetCustomRole() is
                 CustomRoles.Egoist or
-                CustomRoles.Jackal;
+                CustomRoles.Jackal or
+                CustomRoles.Remotekiller;
         }
         public static bool KnowDeathReason(this PlayerControl seer, PlayerControl target)
             => (seer.Is(CustomRoles.Doctor)

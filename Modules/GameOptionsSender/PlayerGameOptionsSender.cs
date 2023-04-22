@@ -145,10 +145,14 @@ namespace TownOfHost.Modules
                     break;
                 case CustomRoles.Mayor:
                     AURoleOptions.EngineerCooldown =
-                        Main.MayorUsedButtonCount.TryGetValue(player.PlayerId, out var count) && count < Options.MayorNumOfUseButton.GetInt()
-                        ? opt.GetInt(Int32OptionNames.EmergencyCooldown)
-                        : 300f;
+                    Main.MayorUsedButtonCount.TryGetValue(player.PlayerId, out var count) && count < Options.MayorNumOfUseButton.GetInt()
+                    ? opt.GetInt(Int32OptionNames.EmergencyCooldown)
+                    : 300f;
                     AURoleOptions.EngineerInVentMaxTime = 1;
+                    break;
+                case CustomRoles.VentMaster:
+                    AURoleOptions.EngineerCooldown = 0;
+                    AURoleOptions.EngineerInVentMaxTime = 0;
                     break;
                 case CustomRoles.Mare:
                     Mare.ApplyGameOptions(player.PlayerId);

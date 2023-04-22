@@ -25,7 +25,8 @@ namespace TownOfHost
                 CustomRoles.Mafia or
                 CustomRoles.FireWorks or
                 CustomRoles.Sniper or
-                CustomRoles.EvilTracker;
+                CustomRoles.EvilTracker or
+                CustomRoles.AntiBait;
         }
         public static bool IsMadmate(this CustomRoles role)
         {
@@ -34,6 +35,7 @@ namespace TownOfHost
                 CustomRoles.SKMadmate or
                 CustomRoles.MadGuardian or
                 CustomRoles.MadSnitch or
+                CustomRoles.MadBait or
                 CustomRoles.MSchrodingerCat;
         }
         public static bool IsImpostorTeam(this CustomRoles role) => role.IsImpostor() || role.IsMadmate();
@@ -51,7 +53,9 @@ namespace TownOfHost
                 CustomRoles.Jackal or
                 CustomRoles.JSchrodingerCat or
                 CustomRoles.HASTroll or
-                CustomRoles.HASFox;
+                CustomRoles.HASFox or
+                CustomRoles.Remotekiller;
+
         }
         public static bool IsCrewmate(this CustomRoles role) => !role.IsImpostorTeam() && !role.IsNeutral();
         public static bool IsVanilla(this CustomRoles role)
@@ -136,6 +140,7 @@ namespace TownOfHost
             {
                 CustomRoles.Sheriff or
                 CustomRoles.Arsonist or
+                CustomRoles.Remotekiller or
                 CustomRoles.Jackal => RoleTypes.Impostor,
 
                 CustomRoles.Scientist or
@@ -143,6 +148,8 @@ namespace TownOfHost
 
                 CustomRoles.Engineer or
                 CustomRoles.Madmate or
+                CustomRoles.MadBait or
+                CustomRoles.VentMaster or
                 CustomRoles.Terrorist => RoleTypes.Engineer,
 
                 CustomRoles.GuardianAngel or
@@ -172,6 +179,7 @@ namespace TownOfHost
                 CustomRoles.GM => CountTypes.OutOfGame,
                 CustomRoles.Egoist => CountTypes.Impostor,
                 CustomRoles.Jackal => CountTypes.Jackal,
+                CustomRoles.Remotekiller => CountTypes.Remotekiller,
                 CustomRoles.HASFox or
                 CustomRoles.HASTroll => CountTypes.None,
                 _ => role.IsImpostor() ? CountTypes.Impostor : CountTypes.Crew,
@@ -191,5 +199,6 @@ namespace TownOfHost
         Crew,
         Impostor,
         Jackal,
+        Remotekiller,
     }
 }

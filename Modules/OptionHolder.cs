@@ -359,6 +359,7 @@ namespace TownOfHost
             Mare.SetupCustomOption();
             TimeThief.SetupCustomOption();
             EvilTracker.SetupCustomOption();
+            SetupRoleOptions(2002, TabGroup.ImpostorRoles, CustomRoles.AntiBait);
 
             DefaultShapeshiftCooldown = FloatOptionItem.Create(5011, "DefaultShapeshiftCooldown", new(5f, 999f, 5f), 15f, TabGroup.ImpostorRoles, false)
                 .SetHeader(true)
@@ -369,6 +370,7 @@ namespace TownOfHost
             // Madmate
             SetupRoleOptions(10000, TabGroup.ImpostorRoles, CustomRoles.Madmate);
             SetupRoleOptions(10100, TabGroup.ImpostorRoles, CustomRoles.MadGuardian);
+            SetupRoleOptions(10300, TabGroup.ImpostorRoles, CustomRoles.MadBait); //TOH-K
             MadGuardianCanSeeWhoTriedToKill = BooleanOptionItem.Create(10110, "MadGuardianCanSeeWhoTriedToKill", false, TabGroup.ImpostorRoles, false).SetParent(CustomRoleSpawnChances[CustomRoles.MadGuardian]);
             //ID10120~10123を使用
             MadGuardianTasks = OverrideTasksData.Create(10120, TabGroup.ImpostorRoles, CustomRoles.MadGuardian);
@@ -422,6 +424,7 @@ namespace TownOfHost
                 .SetValueFormat(OptionFormat.Seconds);
             SetupRoleOptions(20900, TabGroup.CrewmateRoles, CustomRoles.Dictator);
             SetupRoleOptions(21000, TabGroup.CrewmateRoles, CustomRoles.Seer);
+            SetupRoleOptions(22000, TabGroup.CrewmateRoles, CustomRoles.VentMaster);
             TimeManager.SetupCustomOption();
 
             // Neutral
@@ -443,6 +446,7 @@ namespace TownOfHost
             Egoist.SetupCustomOption();
             Executioner.SetupCustomOption();
             Jackal.SetupCustomOption();
+            Remotekiller.SetupCustomOption();
 
             // Add-Ons
             LastImpostor.SetupCustomOption();

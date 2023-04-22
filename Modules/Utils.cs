@@ -10,7 +10,6 @@ using AmongUs.Data;
 using AmongUs.GameOptions;
 using UnhollowerBaseLib;
 using UnityEngine;
-
 using TownOfHost.Modules;
 using TownOfHost.Roles.Impostor;
 using TownOfHost.Roles.Crewmate;
@@ -277,11 +276,13 @@ namespace TownOfHost
                 {
                     case CustomRoles.GM:
                     case CustomRoles.Madmate:
+                    case CustomRoles.MadBait:
                     case CustomRoles.SKMadmate:
                     case CustomRoles.Sheriff:
                     case CustomRoles.Arsonist:
                     case CustomRoles.Egoist:
                     case CustomRoles.Jackal:
+                    case CustomRoles.Remotekiller:
                     case CustomRoles.Jester:
                     case CustomRoles.Opportunist:
                         hasTasks = false;
@@ -536,6 +537,25 @@ namespace TownOfHost
             }
             SendMessage(sb.ToString(), PlayerId);
         }
+        public static void ShowLastWins(byte PlayerId = byte.MaxValue)
+        {
+
+            var sb = new StringBuilder();
+
+            sb.Append($"{SetEverythingUpPatch.LastWinsText}");
+            SendMessage(sb.ToString(), PlayerId);
+        }
+
+        public static void ShowTimer(byte PlayerId = byte.MaxValue)
+        {
+
+            var sb = new StringBuilder();
+            float timerValue = GameStartManagerPatch.GetTimer();
+            int minutes = (int)timerValue / 60;
+            int seconds = (int)timerValue % 60;
+            sb.Append($"{minutes:00}:{seconds:00}");
+            SendMessage(sb.ToString(), PlayerId);
+        }
         public static void ShowKillLog(byte PlayerId = byte.MaxValue)
         {
             if (GameStates.IsInGame)
@@ -631,13 +651,13 @@ namespace TownOfHost
             else
             {
                 if (AmongUsClient.Instance.IsGamePublic)
-                    name = $"<color={Main.ModColor}>TownOfHost v{Main.PluginVersion}</color>\r\n" + name;
+                    name = $"<color={Main.ModColor}>TownOfHost-K v{Main.PluginVersion}</color>\r\n" + name;
                 switch (Options.GetSuffixMode())
                 {
                     case SuffixModes.None:
                         break;
                     case SuffixModes.TOH:
-                        name += $"\r\n<color={Main.ModColor}>TOH v{Main.PluginVersion}</color>";
+                        name += $"\r\n<color={Main.ModColor}>TOH-K v{Main.PluginVersion}</color>";
                         break;
                     case SuffixModes.Streaming:
                         name += $"\r\n<color={Main.ModColor}>{GetString("SuffixMode.Streaming")}</color>";
