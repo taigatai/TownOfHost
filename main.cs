@@ -47,7 +47,7 @@ namespace TownOfHost
         // ==========
         //Sorry for many Japanese comments.
         public const string PluginGuid = "com.emptybottle.townofhost";
-        public const string PluginVersion = "4.0.0";
+        public const string PluginVersion = "0.0.32";
         public Harmony Harmony { get; } = new Harmony(PluginGuid);
         public static Version version = Version.Parse(PluginVersion);
         public static BepInEx.Logging.ManualLogSource Logger;
@@ -224,8 +224,6 @@ namespace TownOfHost
                     {CustomRoles.TimeManager, "#6495ed"},
                     //TOH-K
                     {CustomRoles.VentMaster, "#ff6666"},
-                    {CustomRoles.ToiletFan, "#5f5573"},
-                    {CustomRoles.Bakery, "#e65151"},
                     //ニュートラル役職
                     {CustomRoles.Arsonist, "#ff6633"},
                     {CustomRoles.Jester, "#ec62a5"},
@@ -315,12 +313,7 @@ namespace TownOfHost
         EvilTracker,
         //TOH-k
         AntiBait,
-        Bomber,
-        Magician,
         Remotekiller,
-        Robbery,
-        SilentKiller,
-        Chef,
         //Madmate
         MadGuardian,
         Madmate,
