@@ -47,7 +47,7 @@ namespace TownOfHost
         // ==========
         //Sorry for many Japanese comments.
         public const string PluginGuid = "com.emptybottle.townofhost";
-        public const string PluginVersion = "0.0.32";
+        public const string PluginVersion = "4.0.0";
         public Harmony Harmony { get; } = new Harmony(PluginGuid);
         public static Version version = Version.Parse(PluginVersion);
         public static BepInEx.Logging.ManualLogSource Logger;
@@ -62,7 +62,8 @@ namespace TownOfHost
         public static ConfigEntry<string> HideColor { get; private set; }
         public static ConfigEntry<bool> ForceJapanese { get; private set; }
         public static ConfigEntry<bool> JapaneseRoleName { get; private set; }
-        public static ConfigEntry<bool> Japanesecommand { get; private set; }
+        public static ConfigEntry<bool> ChangeSomeLanguage { get; private set; }
+        public static ConfigEntry<bool> Hiderecommendedsettings { get; private set; }
         public static ConfigEntry<int> MessageWait { get; private set; }
 
         public static Dictionary<byte, PlayerVersion> playerVersion = new();
@@ -105,6 +106,7 @@ namespace TownOfHost
         public static Dictionary<byte, bool> isCurseAndKill = new();
         public static Dictionary<(byte, byte), bool> isDoused = new();
         public static Dictionary<byte, (PlayerControl, float)> ArsonistTimer = new();
+        public static Dictionary<(byte, byte), bool> Cooking = new();
         /// <summary>
         /// Key: ターゲットのPlayerId, Value: パペッティアのPlayerId
         /// </summary>
@@ -139,7 +141,8 @@ namespace TownOfHost
             HideColor = Config.Bind("Client Options", "Hide Game Code Color", $"{ModColor}");
             ForceJapanese = Config.Bind("Client Options", "Force Japanese", false);
             JapaneseRoleName = Config.Bind("Client Options", "Japanese Role Name", true);
-            Japanesecommand = Config.Bind("Client Options", "Japanese command", false);
+            ChangeSomeLanguage = Config.Bind("Client Options", "Change Some Language", false);
+            Hiderecommendedsettings = Config.Bind("Client Options", "Hide recommended settings", false);
             DebugKeyInput = Config.Bind("Authentication", "Debug Key", "");
 
             Logger = BepInEx.Logging.Logger.CreateLogSource("TownOfHost");
@@ -161,6 +164,7 @@ namespace TownOfHost
             CursedPlayers = new Dictionary<byte, PlayerControl>();
             isDoused = new Dictionary<(byte, byte), bool>();
             ArsonistTimer = new Dictionary<byte, (PlayerControl, float)>();
+            Cooking = new Dictionary<(byte, byte), bool>();
             MayorUsedButtonCount = new Dictionary<byte, int>();
             winnerList = new();
             VisibleTasksCount = false;
@@ -220,6 +224,8 @@ namespace TownOfHost
                     {CustomRoles.TimeManager, "#6495ed"},
                     //TOH-K
                     {CustomRoles.VentMaster, "#ff6666"},
+                    {CustomRoles.ToiletFan, "#5f5573"},
+                    {CustomRoles.Bakery, "#e65151"},
                     //ニュートラル役職
                     {CustomRoles.Arsonist, "#ff6633"},
                     {CustomRoles.Jester, "#ec62a5"},
@@ -233,6 +239,9 @@ namespace TownOfHost
                     {CustomRoles.JSchrodingerCat, "#00b4eb"},
                     //TOH-K
                     {CustomRoles.Remotekiller, "#8f00ce"},
+                    {CustomRoles.Robbery,"#4d4d4d"},
+                    {CustomRoles.Chef, "#ff6633"},
+                    {CustomRoles.JackalMafia, "#00b4eb"},
                     //HideAndSeek
                     {CustomRoles.HASFox, "#e478ff"},
                     {CustomRoles.HASTroll, "#00ff00"},
@@ -306,7 +315,12 @@ namespace TownOfHost
         EvilTracker,
         //TOH-k
         AntiBait,
+        Bomber,
+        Magician,
         Remotekiller,
+        Robbery,
+        SilentKiller,
+        Chef,
         //Madmate
         MadGuardian,
         Madmate,
@@ -337,6 +351,8 @@ namespace TownOfHost
         CSchrodingerCat,//クルー陣営のシュレディンガーの猫
         //TOH-K
         VentMaster,
+        ToiletFan,
+        Bakery,
         //Neutral
         Arsonist,
         Egoist,
@@ -347,6 +363,7 @@ namespace TownOfHost
         Terrorist,
         Executioner,
         Jackal,
+        JackalMafia,
         JSchrodingerCat,//ジャッカル陣営のシュレディンガーの猫
         //HideAndSeek
         HASFox,
@@ -374,7 +391,10 @@ namespace TownOfHost
         Arsonist = CustomRoles.Arsonist,
         Egoist = CustomRoles.Egoist,
         Jackal = CustomRoles.Jackal,
+        JackalMafia = CustomRoles.JackalMafia,
         Remotekiller = CustomRoles.Remotekiller,
+        Robbery = CustomRoles.Robbery,
+        Chef = CustomRoles.Chef,
         HASTroll = CustomRoles.HASTroll,
     }
     public enum AdditionalWinners
@@ -398,7 +418,8 @@ namespace TownOfHost
         Streaming,
         Recording,
         RoomHost,
-        OriginalName
+        OriginalName,
+        Timer
     }
     public enum VoteMode
     {
