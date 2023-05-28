@@ -18,7 +18,7 @@ Englishはいつか作る<br>
 
 ## リリース
 
-AmongUsバージョン : **2023.3.28**
+AmongUsバージョン : **2023.3.28**<br>
 本家TOH v5.0.0に対応済み!!(これ一位..?)
 
 **最新版は[こちら](https://github.com/KYMario/TownOfHost-K/releases/latest)**
