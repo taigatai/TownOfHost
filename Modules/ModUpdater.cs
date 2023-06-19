@@ -14,7 +14,7 @@ namespace TownOfHost
     [HarmonyPatch]
     public class ModUpdater
     {
-        private static readonly string URL = "https://api.github.com/repos/KYMario/TownOfHost-K";
+        private static readonly string URL = "https://api.github.com/repos/tukasa0001/TownOfHost";
         public static bool hasUpdate = false;
         public static bool isBroken = false;
         public static bool isChecked = false;
@@ -37,12 +37,7 @@ namespace TownOfHost
             }
             MainMenuManagerPatch.updateButton.SetActive(hasUpdate);
             MainMenuManagerPatch.updateButton.transform.position = MainMenuManagerPatch.template.transform.position + new Vector3(0.25f, 0.75f);
-            __instance.StartCoroutine(Effects.Lerp(0.01f, new Action<float>((p) =>
-            {
-                MainMenuManagerPatch.updateButton.transform
-                    .GetChild(0).GetComponent<TMPro.TMP_Text>()
-                    .SetText($"{GetString("updateButton")}\n{latestTitle}");
-            })));
+            MainMenuManagerPatch.updateButton.transform.GetChild(0).GetComponent<TMPro.TMP_Text>().SetText($"{GetString("updateButton")}\n{latestTitle}");
         }
         public static async Task<bool> CheckRelease(bool beta = false)
         {
@@ -52,7 +47,7 @@ namespace TownOfHost
                 string result;
                 using (HttpClient client = new())
                 {
-                    client.DefaultRequestHeaders.Add("User-Agent", "TownOfHost-K Updater");
+                    client.DefaultRequestHeaders.Add("User-Agent", "TownOfHost Updater");
                     using var response = await client.GetAsync(new Uri(url), HttpCompletionOption.ResponseContentRead);
                     if (!response.IsSuccessStatusCode || response.Content == null)
                     {
@@ -75,17 +70,17 @@ namespace TownOfHost
                     JArray assets = data["assets"].Cast<JArray>();
                     for (int i = 0; i < assets.Count; i++)
                     {
-                        if (assets[i]["name"].ToString() == "TownOfHost-K_Steam.dll" && Constants.GetPlatformType() == Platforms.StandaloneSteamPC)
+                        if (assets[i]["name"].ToString() == "TownOfHost_Steam.dll" && Constants.GetPlatformType() == Platforms.StandaloneSteamPC)
                         {
                             downloadUrl = assets[i]["browser_download_url"].ToString();
                             break;
                         }
-                        if (assets[i]["name"].ToString() == "TownOfHost-K_Epic.dll" && Constants.GetPlatformType() == Platforms.StandaloneEpicPC)
+                        if (assets[i]["name"].ToString() == "TownOfHost_Epic.dll" && Constants.GetPlatformType() == Platforms.StandaloneEpicPC)
                         {
                             downloadUrl = assets[i]["browser_download_url"].ToString();
                             break;
                         }
-                        if (assets[i]["name"].ToString() == "TownOfHost-K.dll")
+                        if (assets[i]["name"].ToString() == "TownOfHost.dll")
                             downloadUrl = assets[i]["browser_download_url"].ToString();
                     }
                     hasUpdate = latestVersion.CompareTo(Main.version) > 0;
@@ -152,7 +147,7 @@ namespace TownOfHost
             {
                 using WebClient client = new();
                 client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(DownloadCallBack);
-                client.DownloadFileAsync(new Uri(url), "BepInEx/plugins/TownOfHost-K.dll");
+                client.DownloadFileAsync(new Uri(url), "BepInEx/plugins/TownOfHost.dll");
                 while (client.IsBusy) await Task.Delay(1);
                 ShowPopup(GetString("updateRestart"), true);
             }
