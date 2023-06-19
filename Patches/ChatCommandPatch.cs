@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Assets.CoreScripts;
 using HarmonyLib;
 using Hazel;
-using UnityEngine;
+
+using TownOfHost.Roles.Core;
 using static TownOfHost.Translator;
 
 namespace TownOfHost
@@ -17,6 +15,8 @@ namespace TownOfHost
     class ChatCommands
     {
         public static List<string> ChatHistory = new();
+        private static Dictionary<CustomRoles, string> roleCommands;
+
         public static bool Prefix(ChatController __instance)
         {
             if (__instance.TextArea.text == "") return false;
@@ -55,7 +55,6 @@ namespace TownOfHost
                 Main.isChatCommand = true;
                 switch (args[0])
                 {
-
                     case "/win":
                     case "/winner":
                         canceled = true;
@@ -68,18 +67,6 @@ namespace TownOfHost
                         Utils.ShowLastResult();
                         break;
 
-                    case "/w":
-                        canceled = true;
-                        Utils.ShowLastWins();
-                        break;
-
-                    case "/timer":
-                    case "/tr":
-                        canceled = true;
-                        if (!GameStates.IsInGame)
-                            Utils.ShowTimer();
-                        break;
-
                     case "/kl":
                     case "/killlog":
                         canceled = true;
@@ -89,24 +76,14 @@ namespace TownOfHost
                     case "/r":
                     case "/rename":
                         canceled = true;
-                        var name = string.Join(" ", args.Skip(1)).Trim();
-                        if (string.IsNullOrEmpty(name))
-                        {
-                            Main.nickName = "";
-                            break;
-                        }
-                        if (name.StartsWith(" ")) break;
-                        Main.nickName = name;
+                        Main.nickName = args.Length > 1 ? Main.nickName = args[1] : "";
                         break;
 
                     case "/hn":
                     case "/hidename":
                         canceled = true;
                         Main.HideName.Value = args.Length > 1 ? args.Skip(1).Join(delimiter: " ") : Main.HideName.DefaultValue.ToString();
-                        GameStartManagerPatch.GameStartManagerStartPatch.HideName.text =
-                            ColorUtility.TryParseHtmlString(Main.HideColor.Value, out _)
-                                ? $"<color={Main.HideColor.Value}>{Main.HideName.Value}</color>"
-                                : $"<color={Main.ModColor}>{Main.HideName.Value}</color>";
+                        GameStartManagerPatch.HideName.text = Main.HideName.Value;
                         break;
 
                     case "/n":
@@ -207,7 +184,6 @@ namespace TownOfHost
                                 }
                                 break;
 
-
                             case "n":
                             case "now":
                                 Utils.ShowActiveSettingsHelp();
@@ -257,15 +233,6 @@ namespace TownOfHost
                         Utils.GetPlayerById(id)?.RpcExileV2();
                         break;
 
-                    case "/forceend":
-                    case "/fe":
-                        canceled = true;
-                        Utils.SendMessage("ホストから強制終了コマンドが入力されました");
-                        GameManager.Instance.enabled = false;
-                        CustomWinnerHolder.WinnerTeam = CustomWinner.None;
-                        GameManager.Instance.RpcEndGame(GameOverReason.ImpostorByKill, false);
-                        break;
-
                     case "/kill":
                         canceled = true;
                         if (args.Length < 2 || !int.TryParse(args[1], out int id2)) break;
@@ -275,14 +242,6 @@ namespace TownOfHost
                     default:
                         Main.isChatCommand = false;
                         break;
-
-                    case "/test":
-                        canceled = true;
-                        __instance.AddChat(PlayerControl.LocalPlayer, "kyが作ったテストコマンド");
-                        cancelVal = "テストだよ";
-                        break;
-
-
                 }
             }
             if (canceled)
@@ -297,79 +256,48 @@ namespace TownOfHost
 
         public static void GetRolesInfo(string role)
         {
-            var roleList = new Dictionary<CustomRoles, string>
+            // 初回のみ処理
+            if (roleCommands == null)
             {
-                //GM
-                { CustomRoles.GM, "gm"},
-                //Impostor役職
-                { (CustomRoles)(-1), $"== {GetString("Impostor")} ==" }, //区切り用
-                { CustomRoles.BountyHunter, "bo" },
-                { CustomRoles.EvilTracker,"et" },
-                { CustomRoles.FireWorks, "fw" },
-                { CustomRoles.Mare, "ma" },
-                { CustomRoles.Mafia, "mf" },
-                { CustomRoles.SerialKiller, "sk" },
-                { CustomRoles.ShapeMaster, "sha" },
-                { CustomRoles.TimeThief, "tt"},
-                { CustomRoles.Sniper, "snp" },
-                { CustomRoles.Puppeteer, "pup" },
-                { CustomRoles.Vampire, "va" },
-                { CustomRoles.Warlock, "wa" },
-                { CustomRoles.Witch, "wi" },
-                //TOH-K
-                { CustomRoles.AntiBait, "ab"},
-                //Madmate役職
-                { (CustomRoles)(-2), $"== {GetString("Madmate")} ==" }, //区切り用
-                { CustomRoles.MadGuardian, "mg" },
-                { CustomRoles.Madmate, "mm" },
-                { CustomRoles.MadSnitch, "msn" },
-                { CustomRoles.SKMadmate, "sm" },
-                //TOH-K
-                { CustomRoles.MadBait, "mb"},
-                //両陣営役職
-                { (CustomRoles)(-3), $"== {GetString("Impostor")} or {GetString("Crewmate")} ==" }, //区切り用
-                { CustomRoles.Watcher, "wat" },
-                //Crewmate役職
-                { (CustomRoles)(-4), $"== {GetString("Crewmate")} ==" }, //区切り用
-                { CustomRoles.Bait, "ba" },
-                { CustomRoles.Dictator, "dic" },
-                { CustomRoles.Doctor, "doc" },
-                { CustomRoles.Lighter, "li" },
-                { CustomRoles.Mayor, "my" },
-                { CustomRoles.SabotageMaster, "sa" },
-                { CustomRoles.Seer,"se" },
-                { CustomRoles.Sheriff, "sh" },
-                { CustomRoles.Snitch, "sn" },
-                { CustomRoles.SpeedBooster, "sb" },
-                { CustomRoles.Trapper, "tra" },
-                { CustomRoles.TimeManager, "tm"},
-                //TOH-K
-                { CustomRoles.VentMaster, "ve"},
-                //Neutral役職
-                { (CustomRoles)(-5), $"== {GetString("Neutral")} ==" }, //区切り用
-                { CustomRoles.Arsonist, "ar" },
-                { CustomRoles.Egoist, "eg" },
-                { CustomRoles.Executioner, "exe" },
-                { CustomRoles.Jester, "je" },
-                { CustomRoles.Opportunist, "op" },
-                { CustomRoles.SchrodingerCat, "sc" },
-                { CustomRoles.Terrorist, "te" },
-                { CustomRoles.Jackal, "jac" },
-                //TOH-K
-                { CustomRoles.Remotekiller, "rk"},
-                //属性
-                { (CustomRoles)(-6), $"== {GetString("Addons")} ==" }, //区切り用
-                {CustomRoles.Lovers, "lo" },
-                {CustomRoles.Workhorse, "wh" },
-                //HAS
-                { (CustomRoles)(-7), $"== {GetString("HideAndSeek")} ==" }, //区切り用
-                { CustomRoles.HASFox, "hfo" },
-                { CustomRoles.HASTroll, "htr" },
+#pragma warning disable IDE0028  // Dictionary初期化の簡素化をしない
+                roleCommands = new Dictionary<CustomRoles, string>();
 
-            };
+                // GM
+                roleCommands.Add(CustomRoles.GM, "gm");
+
+                // Impostor役職
+                roleCommands.Add((CustomRoles)(-1), $"== {GetString("Impostor")} ==");  // 区切り用
+                ConcatCommands(CustomRoleTypes.Impostor);
+
+                // Madmate役職
+                roleCommands.Add((CustomRoles)(-2), $"== {GetString("Madmate")} ==");  // 区切り用
+                ConcatCommands(CustomRoleTypes.Madmate);
+                roleCommands.Add(CustomRoles.SKMadmate, "sm");
+
+                // Crewmate役職
+                roleCommands.Add((CustomRoles)(-3), $"== {GetString("Crewmate")} ==");  // 区切り用
+                ConcatCommands(CustomRoleTypes.Crewmate);
+
+                // Neutral役職
+                roleCommands.Add((CustomRoles)(-4), $"== {GetString("Neutral")} ==");  // 区切り用
+                ConcatCommands(CustomRoleTypes.Neutral);
+
+                // 属性
+                roleCommands.Add((CustomRoles)(-5), $"== {GetString("Addons")} ==");  // 区切り用
+                roleCommands.Add(CustomRoles.Lovers, "lo");
+                roleCommands.Add(CustomRoles.Watcher, "wat");
+                roleCommands.Add(CustomRoles.Workhorse, "wh");
+
+                // HAS
+                roleCommands.Add((CustomRoles)(-6), $"== {GetString("HideAndSeek")} ==");  // 区切り用
+                roleCommands.Add(CustomRoles.HASFox, "hfo");
+                roleCommands.Add(CustomRoles.HASTroll, "htr");
+#pragma warning restore IDE0028
+            }
+
             var msg = "";
             var rolemsg = $"{GetString("Command.h_args")}";
-            foreach (var r in roleList)
+            foreach (var r in roleCommands)
             {
                 var roleName = r.Key.ToString();
                 var roleShort = r.Value;
@@ -399,6 +327,14 @@ namespace TownOfHost
             msg += rolemsg;
             Utils.SendMessage(msg);
         }
+        private static void ConcatCommands(CustomRoleTypes roleType)
+        {
+            var roles = CustomRoleManager.AllRolesInfo.Values.Where(role => role.CustomRoleType == roleType);
+            foreach (var role in roles)
+            {
+                roleCommands[role.RoleName] = role.ChatCommand;
+            }
+        }
         public static void OnReceiveChat(PlayerControl player, string text)
         {
             if (!AmongUsClient.Instance.AmHost) return;
@@ -409,16 +345,6 @@ namespace TownOfHost
                 case "/l":
                 case "/lastresult":
                     Utils.ShowLastResult(player.PlayerId);
-                    break;
-
-                case "/w":
-                    Utils.ShowLastWins(player.PlayerId);
-                    break;
-
-                case "/timer":
-                case "/tr":
-                    if (!GameStates.IsInGame)
-                        Utils.ShowTimer(player.PlayerId);
                     break;
 
                 case "/kl":

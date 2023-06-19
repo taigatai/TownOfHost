@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Text;
 using HarmonyLib;
 using UnityEngine;
+
+using TownOfHost.Roles.Core;
 using static TownOfHost.Translator;
 
 namespace TownOfHost
@@ -69,7 +71,6 @@ namespace TownOfHost
                 SpecialEventText.transform.position = new Vector3(0, 0.5f, 0);
             }
             SpecialEventText.enabled = TitleLogoPatch.amongUsLogo != null;
-
             if (Main.IsInitialRelease)
             {
                 SpecialEventText.text = $"Happy Birthday to {Main.ModName}!";
@@ -102,7 +103,7 @@ namespace TownOfHost
             tohLogo.transform.position = Vector3.up;
             tohLogo.transform.localScale *= 1.2f;
             var renderer = tohLogo.AddComponent<SpriteRenderer>();
-            renderer.sprite = Utils.LoadSprite("TownOfHost.Resources.TownOfHost-K.png", 300f);
+            renderer.sprite = Utils.LoadSprite("TownOfHost.Resources.TownOfHost-Logo.png", 300f);
         }
     }
     [HarmonyPatch(typeof(ModManager), nameof(ModManager.LateUpdate))]
