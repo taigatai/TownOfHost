@@ -42,4 +42,7 @@ AmongUsバージョン : **2023.3.28**<br>
 
 #### 参考など
 [TownOfHost_Y](https://github.com/Yumenopai/TownOfHost_Y)
+[TownOfHost For E](https://github.com/AsumuAkaguma/TownOfHost_ForE)
+[SuperNewRoles](https://github.com/ykundesu/SuperNewRoles)
+
 
