@@ -18,7 +18,7 @@ Englishはいつか作る<br>
 
 ## リリース
 
-AmongUsバージョン : **2023.3.28**<br>
+AmongUsバージョン : **2023.7.12**<br>
 
 **最新版は[こちら](https://github.com/KYMario/TownOfHost-K/releases/latest)**
 
