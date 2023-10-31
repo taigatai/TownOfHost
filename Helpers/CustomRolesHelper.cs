@@ -14,19 +14,15 @@ namespace TownOfHost
             var roleInfo = role.GetRoleInfo();
             if (roleInfo != null)
                 return roleInfo.CustomRoleType == CustomRoleTypes.Impostor;
-            return
-                role is CustomRoles.Impostor or
-                CustomRoles.Shapeshifter;
+
+            return false;
         }
         public static bool IsMadmate(this CustomRoles role)
         {
             var roleInfo = role.GetRoleInfo();
             if (roleInfo != null)
                 return roleInfo.CustomRoleType == CustomRoleTypes.Madmate;
-            return
-                role is
-                CustomRoles.SKMadmate or
-                CustomRoles.MSchrodingerCat;
+            return role == CustomRoles.SKMadmate;
         }
         public static bool IsImpostorTeam(this CustomRoles role) => role.IsImpostor() || role.IsMadmate();
         public static bool IsNeutral(this CustomRoles role)
@@ -34,13 +30,7 @@ namespace TownOfHost
             var roleInfo = role.GetRoleInfo();
             if (roleInfo != null)
                 return roleInfo.CustomRoleType == CustomRoleTypes.Neutral;
-            return
-                role is
-                CustomRoles.SchrodingerCat or
-                CustomRoles.EgoSchrodingerCat or
-                CustomRoles.JSchrodingerCat or
-                CustomRoles.HASTroll or
-                CustomRoles.HASFox;
+            return role is CustomRoles.HASTroll or CustomRoles.HASFox;
         }
         public static bool IsCrewmate(this CustomRoles role) => role.GetRoleInfo()?.CustomRoleType == CustomRoleTypes.Crewmate || (!role.IsImpostorTeam() && !role.IsNeutral());
         public static bool IsVanilla(this CustomRoles role)
@@ -52,15 +42,6 @@ namespace TownOfHost
                 CustomRoles.GuardianAngel or
                 CustomRoles.Impostor or
                 CustomRoles.Shapeshifter;
-        }
-        public static bool IsKilledSchrodingerCat(this CustomRoles role)
-        {
-            return role is
-                CustomRoles.SchrodingerCat or
-                CustomRoles.MSchrodingerCat or
-                CustomRoles.CSchrodingerCat or
-                CustomRoles.EgoSchrodingerCat or
-                CustomRoles.JSchrodingerCat;
         }
 
         public static CustomRoleTypes GetCustomRoleTypes(this CustomRoles role)
@@ -133,14 +114,7 @@ namespace TownOfHost
                 return roleInfo.BaseRoleType.Invoke();
             return role switch
             {
-                CustomRoles.Scientist => RoleTypes.Scientist,
-
-                CustomRoles.Engineer => RoleTypes.Engineer,
-
-                CustomRoles.GuardianAngel or
                 CustomRoles.GM => RoleTypes.GuardianAngel,
-
-                CustomRoles.Shapeshifter => RoleTypes.Shapeshifter,
 
                 _ => role.IsImpostor() ? RoleTypes.Impostor : RoleTypes.Crewmate,
             };
@@ -153,5 +127,7 @@ namespace TownOfHost
         Crew,
         Impostor,
         Jackal,
+        Remotekiller,
+        TaskPlayer,
     }
 }
