@@ -11,9 +11,8 @@ using TownOfHost.Modules;
 using TownOfHost.Roles;
 using TownOfHost.Roles.Core;
 using TownOfHost.Roles.Core.Interfaces;
-using TownOfHost.Roles.Neutral;
+using TownOfHost.Roles.Crewmate;
 using TownOfHost.Roles.AddOns.Crewmate;
-using static TownOfHost.Translator;
 
 namespace TownOfHost
 {
@@ -53,7 +52,6 @@ namespace TownOfHost
         public static bool Prefix(PlayerControl __instance, [HarmonyArgument(0)] PlayerControl target)
         {
             if (!AmongUsClient.Instance.AmHost) return false;
-
             // 処理は全てCustomRoleManager側で行う
             CustomRoleManager.OnCheckMurder(__instance, target);
 
@@ -126,13 +124,15 @@ namespace TownOfHost
     [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.MurderPlayer))]
     class MurderPlayerPatch
     {
-        public static void Prefix(PlayerControl __instance, [HarmonyArgument(0)] PlayerControl target)
+        public static void Prefix(PlayerControl __instance, [HarmonyArgument(0)] PlayerControl target, [HarmonyArgument(1)] MurderResultFlags resultFlags)
         {
-            Logger.Info($"{__instance.GetNameWithRole()} => {target.GetNameWithRole()}{(target.protectedByGuardian ? "(Protected)" : "")}", "MurderPlayer");
+            Logger.Info($"{__instance.GetNameWithRole()} => {target.GetNameWithRole()}{(target.protectedByGuardianThisRound ? "(Protected)" : "")}", "MurderPlayer");
 
             if (RandomSpawn.CustomNetworkTransformPatch.NumOfTP.TryGetValue(__instance.PlayerId, out var num) && num > 2) RandomSpawn.CustomNetworkTransformPatch.NumOfTP[__instance.PlayerId] = 3;
-            if (!target.protectedByGuardian)
+            if (!target.IsProtected())
+            {
                 Camouflage.RpcSetSkin(target, ForceRevert: true);
+            }
         }
         public static void Postfix(PlayerControl __instance, [HarmonyArgument(0)] PlayerControl target)
         {
@@ -185,7 +185,7 @@ namespace TownOfHost
                         mpdistance.Add(p, dis);
                     }
                 }
-                if (mpdistance.Count() != 0)
+                if (mpdistance.Count != 0)
                 {
                     var min = mpdistance.OrderBy(c => c.Value).FirstOrDefault();//一番値が小さい
                     PlayerControl targetm = min.Key;
@@ -200,7 +200,7 @@ namespace TownOfHost
             //変身解除のタイミングがずれて名前が直せなかった時のために強制書き換え
             if (!shapeshifting)
             {
-                new LateTask(() =>
+                _ = new LateTask(() =>
                 {
                     Utils.NotifyRoles(NoCache: true);
                 },
@@ -218,7 +218,7 @@ namespace TownOfHost
             if (GameStates.IsMeeting) return false;
             Logger.Info($"{__instance.GetNameWithRole()} => {target?.Object?.GetNameWithRole() ?? "null"}", "ReportDeadBody");
             if (Options.IsStandardHAS && target != null && __instance == target.Object) return true; //[StandardHAS] ボタンでなく、通報者と死体が同じなら許可
-            if (Options.CurrentGameMode == CustomGameMode.HideAndSeek || Options.IsStandardHAS) return false;
+            if (Options.CurrentGameMode is CustomGameMode.HideAndSeek or CustomGameMode.TaskBattle || Options.IsStandardHAS) return false;
             if (!CanReport[__instance.PlayerId])
             {
                 WaitReport[__instance.PlayerId].Add(target);
@@ -229,6 +229,11 @@ namespace TownOfHost
 
             //通報者が死んでいる場合、本処理で会議がキャンセルされるのでここで止める
             if (__instance.Data.IsDead) return false;
+
+            foreach (var role in CustomRoleManager.AllActiveRoles.Values)
+            {
+                if (role.CancelReportDeadBody(__instance, target)) return false;
+            }
 
             if (Options.SyncButtonMode.GetBool() && target == null)
             {
@@ -302,7 +307,7 @@ namespace TownOfHost
 
             if (AmongUsClient.Instance.AmHost)
             {//実行クライアントがホストの場合のみ実行
-                if (GameStates.IsLobby && (ModUpdater.hasUpdate || ModUpdater.isBroken || !Main.AllowPublicRoom) && AmongUsClient.Instance.IsGamePublic)
+                if (GameStates.IsLobby && (ModUpdater.hasUpdate || ModUpdater.isBroken || !Main.AllowPublicRoom || !VersionChecker.IsSupported || !ModUpdater.publicok) && AmongUsClient.Instance.IsGamePublic)
                     AmongUsClient.Instance.ChangeGamePublic(false);
 
                 if (GameStates.IsInTask && ReportDeadBodyPatch.CanReport[__instance.PlayerId] && ReportDeadBodyPatch.WaitReport[__instance.PlayerId].Count > 0)
@@ -325,6 +330,11 @@ namespace TownOfHost
 
                 if (GameStates.IsInGame && player.AmOwner)
                     DisableDevice.FixedUpdate();
+
+                if (__instance.AmOwner)
+                {
+                    Utils.ApplySuffix();
+                }
             }
             //LocalPlayer専用
             if (__instance.AmOwner)
@@ -380,14 +390,6 @@ namespace TownOfHost
                     //名前変更
                     RealName = target.GetRealName();
 
-                    //名前色変更処理
-                    //自分自身の名前の色を変更
-                    if (target.AmOwner && AmongUsClient.Instance.IsGameStarted)
-                    { //targetが自分自身
-                        if (target.Is(CustomRoles.Arsonist) && Arsonist.IsDouseDone(target))
-                            RealName = Utils.ColorString(Utils.GetRoleColor(CustomRoles.Arsonist), GetString("EnterVentToWin"));
-                    }
-
                     //NameColorManager準拠の処理
                     RealName = RealName.ApplyNameColorData(seer, target, false);
 
@@ -404,6 +406,35 @@ namespace TownOfHost
                     else if (__instance.Is(CustomRoles.Lovers) && PlayerControl.LocalPlayer.Data.IsDead)
                     {
                         Mark.Append($"<color={Utils.GetRoleColorCode(CustomRoles.Lovers)}>♡</color>");
+                    }
+                    if (Options.CurrentGameMode == CustomGameMode.TaskBattle)
+                    {
+                        if (PlayerControl.LocalPlayer.PlayerId == __instance.PlayerId)
+                        {
+                            if (Options.TaskBattletaska.GetBool())
+                            {
+                                var t1 = 0;
+                                var t2 = 0;
+                                foreach (var pc in Main.AllPlayerControls)
+                                {
+                                    t1 += pc.GetPlayerTaskState().AllTasksCount;
+                                    t2 += pc.GetPlayerTaskState().CompletedTasksCount;
+                                }
+                                Mark.Append($"<color=yellow>({t2}/{t1})</color>");
+                            }
+                            if (Options.TaskBattletasko.GetBool())
+                            {
+                                var to = 0;
+                                foreach (var pc in Main.AllPlayerControls)
+                                    if (pc.GetPlayerTaskState().CompletedTasksCount > to) to = pc.GetPlayerTaskState().CompletedTasksCount;
+                                Mark.Append($"<color=#00f7ff>({to})</color>");
+                            }
+                        }
+                        else
+                        {
+                            if (Options.TaskBattletaskc.GetBool())
+                                Mark.Append($"<color=yellow>({target.GetPlayerTaskState().CompletedTasksCount}/{target.GetPlayerTaskState().AllTasksCount})</color>");
+                        }
                     }
 
                     //seerに関わらず発動するLowerText
@@ -467,9 +498,9 @@ namespace TownOfHost
                         {
                             PlayerState.GetByPlayerId(partnerPlayer.PlayerId).DeathReason = CustomDeathReason.FollowingSuicide;
                             if (isExiled)
-                                CheckForEndVotingPatch.TryAddAfterMeetingDeathPlayers(CustomDeathReason.FollowingSuicide, partnerPlayer.PlayerId);
+                                MeetingHudPatch.TryAddAfterMeetingDeathPlayers(CustomDeathReason.FollowingSuicide, partnerPlayer.PlayerId);
                             else
-                                partnerPlayer.RpcMurderPlayer(partnerPlayer);
+                                partnerPlayer.RpcMurderPlayer(partnerPlayer, true);
                         }
                     }
                 }
@@ -502,7 +533,7 @@ namespace TownOfHost
             if (AmongUsClient.Instance.IsGameStarted && Options.CurrentGameMode == CustomGameMode.HideAndSeek)
             {
                 //ゲーム中に色を変えた場合
-                __instance.RpcMurderPlayer(__instance);
+                __instance.RpcMurderPlayer(__instance, true);
             }
             return true;
         }
@@ -520,13 +551,14 @@ namespace TownOfHost
 
                 if ((!user.GetRoleClass()?.OnEnterVent(__instance, id) ?? false) ||
                     (user.Data.Role.Role != RoleTypes.Engineer && //エンジニアでなく
-                !user.CanUseImpostorVentButton()) //インポスターベントも使えない
+                !user.CanUseImpostorVentButton()) || //インポスターベントも使えない
+                Options.CuseVent.GetBool()//ベントが使えない設定
                 )
                 {
                     MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(__instance.NetId, (byte)RpcCalls.BootFromVent, SendOption.Reliable, -1);
                     writer.WritePacked(127);
                     AmongUsClient.Instance.FinishRpcImmediately(writer);
-                    new LateTask(() =>
+                    _ = new LateTask(() =>
                     {
                         int clientId = user.GetClientId();
                         MessageWriter writer2 = AmongUsClient.Instance.StartRpcImmediately(__instance.NetId, (byte)RpcCalls.BootFromVent, SendOption.Reliable, clientId);
@@ -535,6 +567,7 @@ namespace TownOfHost
                     }, 0.5f, "Fix DesyncImpostor Stuck");
                     return false;
                 }
+                VentMaster.OnEnterVent2(__instance, id);
             }
             return true;
         }
@@ -564,10 +597,23 @@ namespace TownOfHost
             {
                 ret = roleClass.OnCompleteTask();
             }
+            else if (pc.Is(CustomRoles.TaskPlayerB) && Options.CurrentGameMode == CustomGameMode.TaskBattle)
+            {
+                if (taskState.IsTaskFinished)
+                {
+                    foreach (var otherPlayer in Main.AllAlivePlayerControls)
+                    {
+                        if (otherPlayer == pc || otherPlayer.AllTasksCompleted()) continue;
+                        otherPlayer.RpcExileV2();
+                        var playerState = PlayerState.GetByPlayerId(otherPlayer.PlayerId);
+                        playerState.SetDead();
+                    }
+                }
+            }
             else
             {
-                ret = Workhorse.OnCompleteTask(pc);
-                var isTaskFinish = taskState.IsTaskFinished;
+                //属性クラスの扱いを決定するまで仮置き
+                ret &= Workhorse.OnCompleteTask(pc);
             }
             Utils.NotifyRoles();
             return ret;
@@ -637,6 +683,18 @@ namespace TownOfHost
                 }
             }
             return true;
+        }
+        [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.Die))]
+        public static class PlayerControlDiePatch
+        {
+            public static void Postfix(PlayerControl __instance)
+            {
+                if (AmongUsClient.Instance.AmHost)
+                {
+                    // 死者の最終位置にペットが残るバグ対応
+                    __instance.RpcSetPet("");
+                }
+            }
         }
     }
 }

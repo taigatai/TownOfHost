@@ -21,7 +21,7 @@ namespace TownOfHost
     {
         public static void Postfix(EmergencyMinigame __instance)
         {
-            if (Options.CurrentGameMode == CustomGameMode.HideAndSeek) __instance.Close();
+            if (Options.CurrentGameMode is CustomGameMode.HideAndSeek or CustomGameMode.TaskBattle) __instance.Close();
         }
     }
     [HarmonyPatch(typeof(Vent), nameof(Vent.CanUse))]

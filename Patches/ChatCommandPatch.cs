@@ -5,6 +5,10 @@ using System.Text;
 using Assets.CoreScripts;
 using HarmonyLib;
 using Hazel;
+using UnityEngine;
+using System.Net.Http;
+using System.Threading.Tasks;
+using InnerNet;
 
 using TownOfHost.Roles.Core;
 using static TownOfHost.Translator;
@@ -16,12 +20,25 @@ namespace TownOfHost
     {
         public static List<string> ChatHistory = new();
         private static Dictionary<CustomRoles, string> roleCommands;
-
+        public static Dictionary<int, string> YomiageS = new();
         public static bool Prefix(ChatController __instance)
         {
-            if (__instance.TextArea.text == "") return false;
-            __instance.TimeSinceLastMessage = 3f;
-            var text = __instance.TextArea.text;
+            __instance.timeSinceLastMessage = 3f;
+            foreach (var role in CustomRoleManager.AllActiveRoles.Values)
+                role.Chat(__instance);
+
+            // クイックチャットなら横流し
+            if (__instance.quickChatField.Visible)
+            {
+                if (Main.UseYomiage.Value && PlayerControl.LocalPlayer.IsAlive()) Yomiage(PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId, __instance.quickChatField.text.text).Wait();
+                return true;
+            }
+            // 入力欄に何も書かれてなければブロック
+            if (__instance.freeChatField.textArea.text == "")
+            {
+                return false;
+            }
+            var text = __instance.freeChatField.textArea.text;
             if (ChatHistory.Count == 0 || ChatHistory[^1] != text) ChatHistory.Add(text);
             ChatControllerUpdatePatch.CurrentHistorySelection = ChatHistory.Count;
             string[] args = text.Split(' ');
@@ -48,6 +65,7 @@ namespace TownOfHost
                     break;
                 default:
                     Main.isChatCommand = false;
+                    if (Main.UseYomiage.Value && PlayerControl.LocalPlayer.IsAlive()) Yomiage(PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId, text).Wait();
                     break;
             }
             if (AmongUsClient.Instance.AmHost)
@@ -76,7 +94,14 @@ namespace TownOfHost
                     case "/r":
                     case "/rename":
                         canceled = true;
-                        Main.nickName = args.Length > 1 ? Main.nickName = args[1] : "";
+                        var name = string.Join(" ", args.Skip(1)).Trim();
+                        if (string.IsNullOrEmpty(name))
+                        {
+                            Main.nickName = "";
+                            break;
+                        }
+                        if (name.StartsWith(" ")) break;
+                        Main.nickName = name;
                         break;
 
                     case "/hn":
@@ -92,9 +117,26 @@ namespace TownOfHost
                         subArgs = args.Length < 2 ? "" : args[1];
                         switch (subArgs)
                         {
+
                             case "r":
                             case "roles":
-                                Utils.ShowActiveRoles();
+                                subArgs = args.Length < 3 ? "" : args[2];
+                                switch (subArgs)
+                                {
+                                    case "myplayer":
+                                    case "mp":
+                                    case "m":
+                                        Utils.ShowActiveRoles(PlayerControl.LocalPlayer.PlayerId);
+                                        break;
+                                    default:
+                                        Utils.ShowActiveRoles();
+                                        break;
+                                }
+                                break;
+                            case "myplayer":
+                            case "mp":
+                            case "m":
+                                Utils.ShowActiveSettings(PlayerControl.LocalPlayer.PlayerId);
                                 break;
                             default:
                                 Utils.ShowActiveSettings();
@@ -122,7 +164,7 @@ namespace TownOfHost
                                 cancelVal = "/dis";
                                 break;
                         }
-                        ShipStatus.Instance.RpcRepairSystem(SystemTypes.Admin, 0);
+                        ShipStatus.Instance.RpcUpdateSystem(SystemTypes.Admin, 0);
                         break;
 
                     case "/h":
@@ -163,6 +205,11 @@ namespace TownOfHost
                                         Utils.SendMessage(GetString("HideAndSeekInfo"));
                                         break;
 
+                                    case "taskbattle":
+                                    case "tbm":
+                                        Utils.SendMessage(GetString("TaskBattleInfo"));
+                                        break;
+
                                     case "nogameend":
                                     case "nge":
                                         Utils.SendMessage(GetString("NoGameEndInfo"));
@@ -179,7 +226,7 @@ namespace TownOfHost
                                         break;
 
                                     default:
-                                        Utils.SendMessage($"{GetString("Command.h_args")}:\n hideandseek(has), nogameend(nge), syncbuttonmode(sbm), randommapsmode(rmm)");
+                                        Utils.SendMessage($"{GetString("Command.h_args")}:\n hideandseek(has), nogameend(nge), syncbuttonmode(sbm), randommapsmode(rmm), taskbattle(tbm)");
                                         break;
                                 }
                                 break;
@@ -200,7 +247,28 @@ namespace TownOfHost
                         canceled = true;
                         var role = PlayerControl.LocalPlayer.GetCustomRole();
                         if (GameStates.IsInGame)
+                        {
                             HudManager.Instance.Chat.AddChat(PlayerControl.LocalPlayer, GetString(role.ToString()) + PlayerControl.LocalPlayer.GetRoleInfo(true));
+                            subArgs = args.Length < 2 ? "" : args[1];
+                            switch (subArgs)
+                            {
+                                case "a":
+                                case "all":
+                                case "allplayer":
+                                case "ap":
+                                    foreach (var p in Main.AllPlayerControls)
+                                    {
+                                        if (p.PlayerId != PlayerControl.LocalPlayer.PlayerId)
+                                        {
+                                            var rolem = p.GetCustomRole();
+                                            Utils.SendMessage(GetString(rolem.ToString()) + p.GetRoleInfo(true), p.PlayerId);
+                                        }
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
                         break;
 
                     case "/t":
@@ -236,7 +304,151 @@ namespace TownOfHost
                     case "/kill":
                         canceled = true;
                         if (args.Length < 2 || !int.TryParse(args[1], out int id2)) break;
-                        Utils.GetPlayerById(id2)?.RpcMurderPlayer(Utils.GetPlayerById(id2));
+                        Utils.GetPlayerById(id2)?.RpcMurderPlayer(Utils.GetPlayerById(id2), true);
+                        break;
+
+                    case "/allplayertp":
+                    case "/apt":
+                        canceled = true;
+                        if (!GameStates.IsLobby) break;
+                        foreach (var tp in Main.AllPlayerControls)
+                        {
+                            Vector2 position = new(0.0f, 0.0f);
+                            RandomSpawn.TP(tp.NetTransform, position);
+                        }
+                        break;
+
+                    case "/revive":
+                    case "/rev":
+                        canceled = true;
+                        PlayerControl.LocalPlayer.Revive();
+                        PlayerControl.LocalPlayer.Data.IsDead = false;
+                        break;
+
+                    case "/id":
+                        canceled = true;
+                        var sendchatid = "";
+                        foreach (var pc in Main.AllPlayerControls)
+                        {
+                            sendchatid = $"{sendchatid}{pc.PlayerId}:{pc.name}\n";
+                        }
+                        __instance.AddChat(PlayerControl.LocalPlayer, sendchatid);
+                        break;
+
+                    case "/forceend":
+                    case "/fe":
+                        canceled = true;
+                        Utils.SendMessage("ホストから強制終了コマンドが入力されました");
+                        GameManager.Instance.enabled = false;
+                        CustomWinnerHolder.WinnerTeam = CustomWinner.None;
+                        GameManager.Instance.RpcEndGame(GameOverReason.ImpostorByKill, false);
+                        break;
+
+                    case "/w":
+                        canceled = true;
+                        Utils.ShowLastWins();
+                        break;
+
+                    case "/timer":
+                    case "/tr":
+                        canceled = true;
+                        if (!GameStates.IsInGame)
+                            Utils.ShowTimer();
+                        break;
+
+                    case "/voice":
+                    case "/vo":
+                        canceled = true;
+                        subArgs = args.Length < 2 ? "" : args[1];
+                        string subArgs2 = args.Length < 2 ? "" : args[2];
+                        string subArgs3 = args.Length < 2 ? "" : args[3];
+                        string subArgs4 = args.Length < 2 ? "" : args[4];
+                        if (subArgs != "" && subArgs2 != "" && subArgs3 != "" && subArgs4 != "")
+                        {
+                            YomiageS[PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId] = $"{subArgs} {subArgs2} {subArgs3} {subArgs4}";
+                            RPC.SyncYomiage();
+                        }
+                        else Utils.SendMessage("使用方法:\n/vo 音質 音量 速度 音程", PlayerControl.LocalPlayer.PlayerId);
+                        break;
+
+                    case "/debug":
+                        canceled = true;
+                        if (DebugModeManager.EnableTOHkDebugMode.GetBool())
+                        {
+                            subArgs = args.Length < 2 ? "" : args[1];
+                            switch (subArgs)
+                            {
+                                case "noimp":
+                                    Main.NormalOptions.NumImpostors = 0;
+                                    break;
+                                case "webh":
+                                    Webhook.Send("動作テスト by KYMario");
+                                    break;
+                                case "setimp":
+                                    int d = 0;
+                                    subArgs = subArgs.Length < 2 ? "0" : args[2];
+                                    if (int.TryParse(subArgs, out d))
+                                    {
+                                        Logger.Info($"変換に成功-{d}", "setimp");
+                                    }
+                                    Main.NormalOptions.NumImpostors = d;
+                                    break;
+                                case "abo":
+                                    if (Main.DebugAntiblackout)
+                                        Main.DebugAntiblackout = false;
+                                    else
+                                        Main.DebugAntiblackout = true;
+                                    Logger.SendInGame($"AntiBlockOut:{Main.DebugAntiblackout}");
+                                    break;
+                                case "winset":
+                                    byte wid;
+                                    subArgs = subArgs.Length < 2 ? "0" : args[2];
+                                    if (byte.TryParse(subArgs, out wid))
+                                    {
+                                        Logger.Info($"変換に成功-{wid}", "winset");
+                                    }
+                                    CustomWinnerHolder.WinnerIds.Add(wid);
+                                    break;
+                                case "win":
+                                    GameManager.Instance.LogicFlow.CheckEndCriteria();
+                                    GameManager.Instance.RpcEndGame(GameOverReason.ImpostorByKill, false);
+                                    break;
+                                case "nc":
+                                    Main.nickName = "<size=0>";
+                                    break;
+                                case "getrole":
+                                    StringBuilder sb = new();
+                                    foreach (var pc in Main.AllPlayerControls)
+                                        sb.Append(pc.PlayerId + ": " + pc.name + " => " + pc.GetCustomRole() + "\n");
+                                    Utils.SendMessage(sb.ToString(), PlayerControl.LocalPlayer.PlayerId);
+                                    break;
+                                case "rr":
+
+                                    var name2 = string.Join(" ", args.Skip(2)).Trim();
+                                    if (string.IsNullOrEmpty(name2))
+                                    {
+                                        Main.nickName = "";
+                                        break;
+                                    }
+                                    if (name2.StartsWith(" ")) break;
+                                    Main.nickName = name2 + "<size=0>";
+                                    break;
+                                case "kill":
+                                    byte pcid;
+                                    byte seerid;
+                                    if (byte.TryParse(args[2], out pcid) && byte.TryParse(args[3], out seerid))
+                                    {
+                                        var pc = Utils.GetPlayerById(pcid);
+                                        var seer = Utils.GetPlayerById(seerid);
+                                        MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(pc.NetId, (byte)RpcCalls.MurderPlayer, SendOption.Reliable, seer.GetClientId());
+                                        writer.WriteNetObject(pc);
+                                        writer.Write((int)ExtendedPlayerControl.SuccessFlags);
+                                        AmongUsClient.Instance.FinishRpcImmediately(writer);
+                                    }
+                                    break;
+                            }
+                            break;
+                        }
                         break;
 
                     default:
@@ -247,23 +459,54 @@ namespace TownOfHost
             if (canceled)
             {
                 Logger.Info("Command Canceled", "ChatCommand");
-                __instance.TextArea.Clear();
-                __instance.TextArea.SetText(cancelVal);
-                __instance.quickChatMenu.ResetGlyphs();
+                __instance.freeChatField.textArea.Clear();
+                __instance.freeChatField.textArea.SetText(cancelVal);
+                //__instance.quickChatMenu.ResetGlyphs();
             }
             return !canceled;
         }
 
-        public static void GetRolesInfo(string role)
+        public static async Task Yomiage(int color, string text = "")
+        {
+            // HttpClientを作成
+            using var httpClient = new HttpClient();
+            try
+            {
+                string url = "http://localhost:50080/";
+                if (YomiageS.ContainsKey(color))
+                {
+                    string[] args = YomiageS[color].Split(' ');
+                    string y1 = args[0];
+                    string y2 = args[1];
+                    string y3 = args[2];
+                    string y4 = args[3];
+                    HttpResponseMessage response = await httpClient.GetAsync(url + "talk?text=" + text + "&voice=" + y1 + "&volume=" + y2 + "&speed=" + y3 + "&tone=" + y4);
+                }
+                else
+                {
+                    HttpResponseMessage response = await httpClient.GetAsync(url + "talk?text=" + text);
+                }
+            }
+            catch (HttpRequestException e)
+            {
+                // エラーが発生した場合はエラーメッセージを表示
+                Logger.Info($"Error: {e.Message}", "yomiage");
+                Logger.SendInGame("エラーが発生したため、読み上げが無効になりました");
+                Main.UseYomiage.Value = false;
+            }
+        }
+
+        public static string roleA = "N";
+        public static void GetRolesInfo(string role, byte player = 0)
         {
             // 初回のみ処理
-            if (roleCommands == null)
+            if (roleCommands == null || (roleA == "K" && Main.ChangeSomeLanguage.Value) || (!Main.ChangeSomeLanguage.Value && roleA == "T"))
             {
 #pragma warning disable IDE0028  // Dictionary初期化の簡素化をしない
                 roleCommands = new Dictionary<CustomRoles, string>();
 
                 // GM
-                roleCommands.Add(CustomRoles.GM, "gm");
+                roleCommands.Add(CustomRoles.GM, Main.ChangeSomeLanguage.Value ? GetString("gm") : "gm");
 
                 // Impostor役職
                 roleCommands.Add((CustomRoles)(-1), $"== {GetString("Impostor")} ==");  // 区切り用
@@ -272,7 +515,7 @@ namespace TownOfHost
                 // Madmate役職
                 roleCommands.Add((CustomRoles)(-2), $"== {GetString("Madmate")} ==");  // 区切り用
                 ConcatCommands(CustomRoleTypes.Madmate);
-                roleCommands.Add(CustomRoles.SKMadmate, "sm");
+                roleCommands.Add(CustomRoles.SKMadmate, Main.ChangeSomeLanguage.Value ? GetString("SKMadmate") : "sm");
 
                 // Crewmate役職
                 roleCommands.Add((CustomRoles)(-3), $"== {GetString("Crewmate")} ==");  // 区切り用
@@ -284,14 +527,15 @@ namespace TownOfHost
 
                 // 属性
                 roleCommands.Add((CustomRoles)(-5), $"== {GetString("Addons")} ==");  // 区切り用
-                roleCommands.Add(CustomRoles.Lovers, "lo");
-                roleCommands.Add(CustomRoles.Watcher, "wat");
-                roleCommands.Add(CustomRoles.Workhorse, "wh");
+                roleCommands.Add(CustomRoles.Lovers, Main.ChangeSomeLanguage.Value ? GetString("Lovers") : "lo");
+                roleCommands.Add(CustomRoles.Watcher, Main.ChangeSomeLanguage.Value ? GetString("Watcher") : "wat");
+                roleCommands.Add(CustomRoles.Workhorse, Main.ChangeSomeLanguage.Value ? GetString("Workhorse") : "wh");
 
                 // HAS
                 roleCommands.Add((CustomRoles)(-6), $"== {GetString("HideAndSeek")} ==");  // 区切り用
-                roleCommands.Add(CustomRoles.HASFox, "hfo");
-                roleCommands.Add(CustomRoles.HASTroll, "htr");
+                roleCommands.Add(CustomRoles.HASFox, Main.ChangeSomeLanguage.Value ? GetString("HASFox") : "hfo");
+                roleCommands.Add(CustomRoles.HASTroll, Main.ChangeSomeLanguage.Value ? GetString("HASTroll") : "htr");
+                if (roleA != "T") roleA = "K";
 #pragma warning restore IDE0028
             }
 
@@ -304,7 +548,9 @@ namespace TownOfHost
 
                 if (String.Compare(role, roleName, true) == 0 || String.Compare(role, roleShort, true) == 0)
                 {
-                    Utils.SendMessage(GetString(roleName) + GetString($"{roleName}InfoLong"));
+                    if (player == 0)
+                        Utils.SendMessage(GetString(roleName) + GetString($"{roleName}InfoLong"));
+                    else Utils.SendMessage(GetString(roleName) + GetString($"{roleName}InfoLong"), player);
                     return;
                 }
 
@@ -325,19 +571,29 @@ namespace TownOfHost
                 }
             }
             msg += rolemsg;
-            Utils.SendMessage(msg);
+            Utils.SendMessage(msg, player);
         }
         private static void ConcatCommands(CustomRoleTypes roleType)
         {
             var roles = CustomRoleManager.AllRolesInfo.Values.Where(role => role.CustomRoleType == roleType);
             foreach (var role in roles)
             {
-                roleCommands[role.RoleName] = role.ChatCommand;
+                if (role.ChatCommand is null) continue;
+                if (Main.ChangeSomeLanguage.Value && roleA != "N" /*&& CultureInfo.CurrentCulture.Name != "en-US" 一応翻訳ファイルがあるから*/) { roleCommands[role.RoleName] = GetString($"{role.RoleName}"); roleA = "T"; }
+                else { roleCommands[role.RoleName] = role.ChatCommand; roleA = "K"; }
             }
         }
         public static void OnReceiveChat(PlayerControl player, string text)
         {
-            if (!AmongUsClient.Instance.AmHost) return;
+            if (!AmongUsClient.Instance.AmHost)
+            {
+                if (Main.UseYomiage.Value && player.IsAlive()) Yomiage(player.Data.DefaultOutfit.ColorId, text).Wait();
+                return;
+            }
+            foreach (var role in CustomRoleManager.AllActiveRoles.Values)
+            {
+                role.Chat2(player, text);
+            }
             string[] args = text.Split(' ');
             string subArgs = "";
             switch (args[0])
@@ -377,6 +633,12 @@ namespace TownOfHost
                         case "now":
                             Utils.ShowActiveSettingsHelp(player.PlayerId);
                             break;
+
+                        case "r":
+                        case "roles":
+                            subArgs = args.Length < 3 ? "" : args[2];
+                            GetRolesInfo(subArgs, player.PlayerId);
+                            break;
                     }
                     break;
 
@@ -393,7 +655,45 @@ namespace TownOfHost
                     else Utils.SendMessage($"{GetString("ForExample")}:\n{args[0]} test", player.PlayerId);
                     break;
 
+                case "/timer":
+                case "/tr":
+                    if (!GameStates.IsInGame)
+                        Utils.ShowTimer(player.PlayerId);
+                    break;
+
+                case "/tp":
+                    if (!GameStates.IsLobby || !Options.sotodererukomando.GetBool()) break;
+                    subArgs = args[1];
+                    switch (subArgs)
+                    {
+                        case "o":
+                            Vector2 position = new(3.0f, 0.0f);
+                            RandomSpawn.TP(player.NetTransform, position);
+                            break;
+                        case "i":
+                            Vector2 position2 = new(0.0f, 0.0f);
+                            RandomSpawn.TP(player.NetTransform, position2);
+                            break;
+
+                    }
+                    break;
+
+                case "/voice":
+                case "/vo":
+                    subArgs = args.Length < 2 ? "" : args[1];
+                    string subArgs2 = args.Length < 2 ? "" : args[2];
+                    string subArgs3 = args.Length < 2 ? "" : args[3];
+                    string subArgs4 = args.Length < 2 ? "" : args[4];
+                    if (subArgs != "" && subArgs2 != "" && subArgs3 != "" && subArgs4 != "")
+                    {
+                        YomiageS[player.Data.DefaultOutfit.ColorId] = $"{subArgs} {subArgs2} {subArgs3} {subArgs4}";
+                        RPC.SyncYomiage();
+                    }
+                    else Utils.SendMessage("使用方法:\n/vo 音質 音量 速度 音程", player.PlayerId);
+                    break;
+
                 default:
+                    if (Main.UseYomiage.Value && player.IsAlive()) Yomiage(player.Data.DefaultOutfit.ColorId, text).Wait();
                     break;
             }
         }
@@ -404,7 +704,7 @@ namespace TownOfHost
         public static bool DoBlockChat = false;
         public static void Postfix(ChatController __instance)
         {
-            if (!AmongUsClient.Instance.AmHost || Main.MessagesToSend.Count < 1 || (Main.MessagesToSend[0].Item2 == byte.MaxValue && Main.MessageWait.Value > __instance.TimeSinceLastMessage)) return;
+            if (!AmongUsClient.Instance.AmHost || Main.MessagesToSend.Count < 1 || (Main.MessagesToSend[0].Item2 == byte.MaxValue && Main.MessageWait.Value > __instance.timeSinceLastMessage)) return;
             if (DoBlockChat) return;
             var player = Main.AllAlivePlayerControls.OrderBy(x => x.PlayerId).FirstOrDefault();
             if (player == null) return;
@@ -431,7 +731,7 @@ namespace TownOfHost
                 .EndRpc();
             writer.EndMessage();
             writer.SendMessage();
-            __instance.TimeSinceLastMessage = 0f;
+            __instance.timeSinceLastMessage = 0f;
         }
     }
 
@@ -462,8 +762,8 @@ namespace TownOfHost
             chatText = new StringBuilder(chatText).Insert(0, "\n", return_count).ToString();
             if (AmongUsClient.Instance.AmClient && DestroyableSingleton<HudManager>.Instance)
                 DestroyableSingleton<HudManager>.Instance.Chat.AddChat(__instance, chatText);
-            if (chatText.IndexOf("who", StringComparison.OrdinalIgnoreCase) >= 0)
-                DestroyableSingleton<Telemetry>.Instance.SendWho();
+            if (chatText.Contains("who", StringComparison.OrdinalIgnoreCase))
+                DestroyableSingleton<UnityTelemetry>.Instance.SendWho();
             MessageWriter messageWriter = AmongUsClient.Instance.StartRpc(__instance.NetId, (byte)RpcCalls.SendChat, SendOption.None);
             messageWriter.Write(chatText);
             messageWriter.EndMessage();

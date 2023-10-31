@@ -47,12 +47,17 @@ namespace TownOfHost
     {
         public static void Postfix(GameModes gameMode)
         {
+            Main.HnSFlag = false;
             if (gameMode == GameModes.HideNSeek)
             {
-                ErrorText.Instance.HnSFlag = true;
-                ErrorText.Instance.AddError(ErrorCode.HnsUnload);
-                Harmony.UnpatchAll();
-                Main.Instance.Unload();
+                Main.HnSFlag = true;
+                if (!DebugModeManager.AmDebugger)
+                {
+                    ErrorText.Instance.HnSFlag = true;
+                    ErrorText.Instance.AddError(ErrorCode.HnsUnload);
+                    Harmony.UnpatchAll();
+                    Main.Instance.Unload();
+                }
             }
         }
     }

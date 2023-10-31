@@ -18,3 +18,15 @@ public static class SabotageButtonDoClickPatch
         return false;
     }
 }
+/*[HarmonyPatch(typeof(KillButton), nameof(KillButton.DoClick))]
+public static class KillButtonDoClickPatch
+{
+    public static void Prefix()
+    {
+        var players = PlayerControl.LocalPlayer.GetPlayersInAbilityRangeSorted(false);
+        PlayerControl closest = players.Count <= 0 ? null : players[0];
+        if (!GameStates.IsInTask || !PlayerControl.LocalPlayer.CanUseKillButton() || closest == null
+            || PlayerControl.LocalPlayer.Data.IsDead || HudManager._instance.KillButton.isCoolingDown) return;
+        PlayerControl.LocalPlayer.CheckMurder(closest); //一時的な修正
+    }
+}*/

@@ -6,6 +6,7 @@ using Hazel;
 using UnityEngine;
 
 using TownOfHost.Roles.Core;
+using TownOfHost.Roles.Impostor;
 
 namespace TownOfHost
 {
@@ -18,7 +19,7 @@ namespace TownOfHost
             public static void Postfix(CustomNetworkTransform __instance, [HarmonyArgument(0)] Vector2 position)
             {
                 if (!AmongUsClient.Instance.AmHost) return;
-                if (position == new Vector2(-25f, 40f)) return; //最初の湧き地点ならreturn
+                if (position == new Vector2(-25f, 40f)) return;
                 if (GameStates.IsInTask)
                 {
                     var player = Main.AllPlayerControls.Where(p => p.NetTransform == __instance).FirstOrDefault();
@@ -27,13 +28,19 @@ namespace TownOfHost
                         Logger.Warn("プレイヤーがnullです", "RandomSpawn");
                         return;
                     }
-                    if (player.Is(CustomRoles.GM)) return; //GMは対象外に
+
+                    if (player.Is(CustomRoles.GM)) return;
 
                     NumOfTP[player.PlayerId]++;
 
-                    if (NumOfTP[player.PlayerId] == 2)
+                    if (NumOfTP[player.PlayerId] == 1)
                     {
                         if (Main.NormalOptions.MapId != 4) return; //マップがエアシップじゃなかったらreturn
+                        if (player.Is(CustomRoles.Penguin))
+                        {
+                            var penguin = player.GetRoleClass() as Penguin;
+                            penguin?.OnSpawnAirship();
+                        }
                         player.RpcResetAbilityCooldown();
                         if (Options.FixFirstKillCooldown.GetBool() && !MeetingStates.MeetingCalled) player.SetKillCooldown(Main.AllPlayerKillCooldown[player.PlayerId]);
                         if (!Options.RandomSpawn.GetBool()) return; //ランダムスポーンが無効ならreturn
@@ -164,6 +171,31 @@ namespace TownOfHost
                 return Options.AirshipAdditionalSpawn.GetBool()
                     ? positions.ToArray().OrderBy(_ => Guid.NewGuid()).Take(1).FirstOrDefault().Value
                     : positions.ToArray()[0..6].OrderBy(_ => Guid.NewGuid()).Take(1).FirstOrDefault().Value;
+            }
+        }
+        public class TheFungleSpawnMap : SpawnMap
+        {
+            public Dictionary<string, Vector2> positions = new()
+            {
+                ["Dropship"] = new(-7.7f, 10.7f),
+                ["Cafeteria"] = new(-17.3f, 6.8f),
+                ["Splash Zone"] = new(-15.0f, -2.2f),
+                ["Kitchen"] = new(-16.7f, -9.2f),
+                ["Laboratory"] = new(-4.9f, -9.1f),
+                ["Meeting Room"] = new(-4.0f, -2.5f),
+                ["Storage"] = new(1.2f, 4.5f),
+                ["The Dorn"] = new(1.3f, -1.4f),
+                ["Jungle"] = new(3.4f, -13.0f),
+                ["Greenhouse"] = new(8.9f, -12.1f),
+                ["Lookout"] = new(7.8f, 0.6f),
+                ["Mining Pit"] = new(11.7f, 8.9f),
+                ["Communication"] = new(20.1f, 13.8f),
+                ["Upper Engine"] = new(22.6f, 3.0f),
+
+            };
+            public override Vector2 GetLocation()
+            {
+                return positions.ToArray().OrderBy(_ => Guid.NewGuid()).Take(1).FirstOrDefault().Value;
             }
         }
     }

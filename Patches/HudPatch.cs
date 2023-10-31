@@ -84,7 +84,7 @@ namespace TownOfHost
                         LowerInfoText.fontSizeMax = 2.0f;
                     }
 
-                    LowerInfoText.text = roleClass?.GetLowerText(player, isForHud: true) ?? "";
+                    LowerInfoText.text = roleClass?.GetLowerText(player, isForMeeting: GameStates.IsMeeting, isForHud: true) ?? "";
                     LowerInfoText.enabled = LowerInfoText.text != "";
 
                     if (!AmongUsClient.Instance.IsGameStarted && AmongUsClient.Instance.NetworkMode != NetworkModes.FreePlay)
@@ -203,10 +203,15 @@ namespace TownOfHost
             {
                 case CustomRoles.Sheriff:
                 case CustomRoles.Arsonist:
+                case CustomRoles.CountKiller:
+                    //case CustomRoles.SchrodingerCat:
                     __instance.SabotageButton.ToggleVisible(false);
                     break;
                 case CustomRoles.Jackal:
                     Jackal.SetHudActive(__instance, isActive);
+                    break;
+                case CustomRoles.JackalMafia:
+                    JackalMafia.SetHudActive(__instance, isActive);
                     break;
             }
             __instance.KillButton.ToggleVisible(player.CanUseKillButton());
@@ -223,7 +228,7 @@ namespace TownOfHost
             if (opts.Mode is MapOptions.Modes.Normal or MapOptions.Modes.Sabotage)
             {
                 var player = PlayerControl.LocalPlayer;
-                if (player.Is(CustomRoleTypes.Impostor) || (player.Is(CustomRoles.Jackal) && Jackal.CanUseSabotage))
+                if (player.Is(CustomRoleTypes.Impostor) || (player.Is(CustomRoles.Jackal) && Jackal.CanUseSabotage) || player.Is(CustomRoles.Egoist) || (player.Is(CustomRoles.JackalMafia) && JackalMafia.CanUseSabotage))
                     opts.Mode = MapOptions.Modes.Sabotage;
                 else
                     opts.Mode = MapOptions.Modes.Normal;
@@ -293,7 +298,7 @@ namespace TownOfHost
         }
         public static void Send()
         {
-            ShipStatus.Instance.RpcRepairSystem((SystemTypes)SystemType, amount);
+            ShipStatus.Instance.RpcUpdateSystem((SystemTypes)SystemType, (byte)amount);
             Reset();
         }
         public static void Reset()

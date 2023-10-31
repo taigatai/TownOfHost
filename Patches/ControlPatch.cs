@@ -2,6 +2,8 @@ using System.Linq;
 using HarmonyLib;
 using UnityEngine;
 
+using TownOfHost.Modules;
+
 namespace TownOfHost
 {
     [HarmonyPatch(typeof(ControllerManager), nameof(ControllerManager.Update))]
@@ -22,6 +24,21 @@ namespace TownOfHost
                 {
                     if (ORGetKeysDown(KeyCode.Alpha1 + i, KeyCode.Keypad1 + i) && OptionShower.pages.Count >= i + 1)
                         OptionShower.currentPage = i;
+                }
+                // 現在の設定を文字列形式のデータに変換してコピー
+                if (GetKeysDown(KeyCode.O, KeyCode.LeftAlt))
+                {
+                    OptionSerializer.SaveToClipboard();
+                }
+                // 現在の設定を文字列形式のデータに変換してファイルに出力
+                if (GetKeysDown(KeyCode.L, KeyCode.LeftAlt))
+                {
+                    OptionSerializer.SaveToFile();
+                }
+                // クリップボードから文字列形式の設定データを読み込む
+                if (GetKeysDown(KeyCode.P, KeyCode.LeftAlt))
+                {
+                    OptionSerializer.LoadFromClipboard();
                 }
             }
             //解像度変更
@@ -58,7 +75,11 @@ namespace TownOfHost
             //実行ファイルのフォルダを開く
             if (GetKeysDown(KeyCode.F10))
             {
-                System.Diagnostics.Process.Start(System.Environment.CurrentDirectory);
+                Utils.OpenDirectory(System.Environment.CurrentDirectory);
+            }
+            if (GetKeysDown(KeyCode.T, KeyCode.B) && !Main.TaskBattleOptionv)
+            {
+                Main.TaskBattleOptionv = true; //隠しゲームモード 気づけた方おめ！ 全然使っていいよ！いつか普通にできるようにするから、いまのうちに友達に自慢しｙ((((
             }
 
             //--以下ホスト専用コマンド--//
@@ -73,6 +94,11 @@ namespace TownOfHost
             if (GetKeysDown(KeyCode.Return, KeyCode.M, KeyCode.LeftShift) && GameStates.IsMeeting)
             {
                 MeetingHud.Instance.RpcClose();
+            }
+            //ミーティングを終了
+            if (GetKeysDown(KeyCode.Return, KeyCode.N, KeyCode.LeftShift) && GameStates.IsMeeting)
+            {
+                MeetingVoteManager.Instance.EndMeeting(true);
             }
             //即スタート
             if (Input.GetKeyDown(KeyCode.LeftShift) && GameStates.IsCountDown)
@@ -98,7 +124,7 @@ namespace TownOfHost
                 Main.isChatCommand = true;
                 Utils.ShowActiveSettings();
             }
-            //TOHオプションをデフォルトに設定
+            //TOH-Kオプションをデフォルトに設定
             if (GetKeysDown(KeyCode.Delete, KeyCode.LeftControl))
             {
                 OptionItem.AllOptions.ToArray().Where(x => x.Id > 0).Do(x => x.SetValue(x.DefaultValue));
@@ -133,6 +159,11 @@ namespace TownOfHost
                 Logger.isAlsoInGame = !Logger.isAlsoInGame;
                 Logger.SendInGame($"ログのゲーム内出力: {Logger.isAlsoInGame}");
             }
+            if (Input.GetKeyDown(KeyCode.R) && GameStates.IsCountDown && DebugModeManager.EnableTOHkDebugMode.GetBool())
+            {
+                Logger.Info("Impostor set to 0", "KeyCommand");
+                Main.NormalOptions.NumImpostors = 0;
+            }
 
             //--以下フリープレイ用コマンド--//
             if (!GameStates.IsFreePlay) return;
@@ -162,10 +193,10 @@ namespace TownOfHost
             //エアシップのトイレのドアを全て開ける
             if (Input.GetKeyDown(KeyCode.P))
             {
-                ShipStatus.Instance.RpcRepairSystem(SystemTypes.Doors, 79);
-                ShipStatus.Instance.RpcRepairSystem(SystemTypes.Doors, 80);
-                ShipStatus.Instance.RpcRepairSystem(SystemTypes.Doors, 81);
-                ShipStatus.Instance.RpcRepairSystem(SystemTypes.Doors, 82);
+                ShipStatus.Instance.RpcUpdateSystem(SystemTypes.Doors, 79);
+                ShipStatus.Instance.RpcUpdateSystem(SystemTypes.Doors, 80);
+                ShipStatus.Instance.RpcUpdateSystem(SystemTypes.Doors, 81);
+                ShipStatus.Instance.RpcUpdateSystem(SystemTypes.Doors, 82);
             }
             //現在の座標を取得
             if (Input.GetKeyDown(KeyCode.I))

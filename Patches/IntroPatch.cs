@@ -16,7 +16,7 @@ namespace TownOfHost
         public static void Postfix(IntroCutscene __instance)
         {
             if (!GameStates.IsModHost) return;
-            new LateTask(() =>
+            _ = new LateTask(() =>
             {
                 CustomRoles role = PlayerControl.LocalPlayer.GetCustomRole();
                 if (!role.IsVanilla())
@@ -94,7 +94,7 @@ namespace TownOfHost
     {
         public static void Prefix(IntroCutscene __instance, ref Il2CppSystem.Collections.Generic.List<PlayerControl> teamToDisplay)
         {
-            if (PlayerControl.LocalPlayer.Is(CustomRoleTypes.Neutral))
+            if (PlayerControl.LocalPlayer.Is(CustomRoleTypes.Neutral) && !PlayerControl.LocalPlayer.Is(CustomRoles.Debugger))
             {
                 //ぼっち役職
                 var soloTeam = new Il2CppSystem.Collections.Generic.List<PlayerControl>();
@@ -122,6 +122,8 @@ namespace TownOfHost
                     {
                         CustomRoles.Egoist => GetString("TeamEgoist"),
                         CustomRoles.Jackal => GetString("TeamJackal"),
+                        CustomRoles.JackalMafia => GetString("TeamJackal"),
+                        CustomRoles.Debugger => " ",
                         _ => GetString("NeutralInfo"),
                     };
                     __instance.BackgroundBar.material.color = Utils.GetRoleColor(role);
@@ -154,14 +156,13 @@ namespace TownOfHost
 
             }
 
-            if (Input.GetKey(KeyCode.RightShift))
+            /*if (Input.GetKey(KeyCode.RightShift))
             {
-                __instance.TeamTitle.text = Main.ModName;
+                __instance.TeamTitle.text = "<size=13>" + Main.ModName;
                 __instance.ImpostorText.gameObject.SetActive(true);
-                __instance.ImpostorText.text = "https://github.com/tukasa0001/TownOfHost" +
-                    "\r\nOut Now on Github";
+                __instance.ImpostorText.text = "";
                 __instance.TeamTitle.color = Color.cyan;
-                StartFadeIntro(__instance, Color.cyan, Color.yellow);
+                StartFadeIntro(__instance, Color.blue, Color.cyan);
             }
             if (Input.GetKey(KeyCode.RightControl))
             {
@@ -170,7 +171,7 @@ namespace TownOfHost
                 __instance.ImpostorText.text = "https://discord.gg/v8SFfdebpz";
                 __instance.TeamTitle.color = Color.magenta;
                 StartFadeIntro(__instance, Color.magenta, Color.magenta);
-            }
+            }*/
         }
         private static async void StartFadeIntro(IntroCutscene __instance, Color start, Color end)
         {
@@ -230,12 +231,12 @@ namespace TownOfHost
                 {
                     Main.AllPlayerControls.Do(pc => pc.RpcResetAbilityCooldown());
                     if (Options.FixFirstKillCooldown.GetBool())
-                        new LateTask(() =>
+                        _ = new LateTask(() =>
                         {
                             Main.AllPlayerControls.Do(pc => pc.SetKillCooldown(Main.AllPlayerKillCooldown[pc.PlayerId] - 2f));
                         }, 2f, "FixKillCooldownTask");
                 }
-                new LateTask(() => Main.AllPlayerControls.Do(pc => pc.RpcSetRoleDesync(RoleTypes.Shapeshifter, -3)), 2f, "SetImpostorForServer");
+                _ = new LateTask(() => Main.AllPlayerControls.Do(pc => pc.RpcSetRoleDesync(RoleTypes.Shapeshifter, -3)), 2f, "SetImpostorForServer");
                 if (PlayerControl.LocalPlayer.Is(CustomRoles.GM))
                 {
                     PlayerControl.LocalPlayer.RpcExile();
@@ -252,6 +253,10 @@ namespace TownOfHost
                             break;
                         case 1:
                             map = new RandomSpawn.MiraHQSpawnMap();
+                            Main.AllPlayerControls.Do(map.RandomTeleport);
+                            break;
+                        case 5:
+                            map = new RandomSpawn.TheFungleSpawnMap();
                             Main.AllPlayerControls.Do(map.RandomTeleport);
                             break;
                     }

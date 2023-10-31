@@ -58,7 +58,7 @@ namespace TownOfHost
 
             Camouflage.Init();
             var invalidColor = Main.AllPlayerControls.Where(p => p.Data.DefaultOutfit.ColorId < 0 || Palette.PlayerColors.Length <= p.Data.DefaultOutfit.ColorId);
-            if (invalidColor.Count() != 0)
+            if (invalidColor.Any())
             {
                 var msg = Translator.GetString("Error.InvalidColor");
                 Logger.SendInGame(msg);
@@ -98,7 +98,8 @@ namespace TownOfHost
                 RPC.SyncCustomSettingsRPC();
                 if (Options.CurrentGameMode == CustomGameMode.HideAndSeek)
                 {
-                    Options.HideAndSeekKillDelayTimer = Options.KillDelay.GetFloat();
+                    if (!Main.HnSFlag)
+                        Options.HideAndSeekKillDelayTimer = Options.KillDelay.GetFloat();
                 }
                 if (Options.IsStandardHAS)
                 {
@@ -140,32 +141,48 @@ namespace TownOfHost
 
             if (Options.CurrentGameMode != CustomGameMode.HideAndSeek)
             {
-                RoleTypes[] RoleTypesList = { RoleTypes.Scientist, RoleTypes.Engineer, RoleTypes.Shapeshifter };
-                foreach (var roleTypes in RoleTypesList)
+                if (Options.CurrentGameMode == CustomGameMode.TaskBattle)
                 {
-                    var roleOpt = Main.NormalOptions.roleOptions;
-                    int numRoleTypes = GetRoleTypesCount(roleTypes);
-                    roleOpt.SetRoleRate(roleTypes, numRoleTypes, numRoleTypes > 0 ? 100 : 0);
+                    foreach (var pc in Main.AllPlayerControls)
+                    {
+                        pc.RpcSetCustomRole(CustomRoles.TaskPlayerB);
+                        if (Options.TaskBattleCanVent.GetBool()) pc.RpcSetRole(RoleTypes.Engineer);
+                        else pc.RpcSetRole(RoleTypes.Crewmate);
+                    }
                 }
+                else
+                {
+                    RoleTypes[] RoleTypesList = { RoleTypes.Scientist, RoleTypes.Engineer, RoleTypes.Shapeshifter };
+                    foreach (var roleTypes in RoleTypesList)
+                    {
+                        var roleOpt = Main.NormalOptions.roleOptions;
+                        int numRoleTypes = GetRoleTypesCount(roleTypes);
+                        roleOpt.SetRoleRate(roleTypes, numRoleTypes, numRoleTypes > 0 ? 100 : 0);
+                    }
 
-                List<PlayerControl> AllPlayers = new();
-                foreach (var pc in Main.AllPlayerControls)
-                {
-                    AllPlayers.Add(pc);
-                }
+                    List<PlayerControl> AllPlayers = new();
+                    foreach (var pc in Main.AllPlayerControls)
+                    {
+                        AllPlayers.Add(pc);
+                    }
 
-                if (Options.EnableGM.GetBool())
-                {
-                    AllPlayers.RemoveAll(x => x == PlayerControl.LocalPlayer);
-                    PlayerControl.LocalPlayer.RpcSetCustomRole(CustomRoles.GM);
-                    PlayerControl.LocalPlayer.RpcSetRole(RoleTypes.Crewmate);
-                    PlayerControl.LocalPlayer.Data.IsDead = true;
+                    if (Options.EnableGM.GetBool())
+                    {
+                        AllPlayers.RemoveAll(x => x == PlayerControl.LocalPlayer);
+                        PlayerControl.LocalPlayer.RpcSetCustomRole(CustomRoles.GM);
+                        PlayerControl.LocalPlayer.RpcSetRole(RoleTypes.Crewmate);
+                        PlayerControl.LocalPlayer.Data.IsDead = true;
+                    }
+                    Dictionary<(byte, byte), RoleTypes> rolesMap = new();
+                    foreach (var (role, info) in CustomRoleManager.AllRolesInfo)
+                    {
+                        if (info.RequireResetCam)
+                        {
+                            AssignDesyncRole(role, AllPlayers, senders, rolesMap, BaseRole: info.BaseRoleType.Invoke());
+                        }
+                    }
+                    MakeDesyncSender(senders, rolesMap);
                 }
-                Dictionary<(byte, byte), RoleTypes> rolesMap = new();
-                AssignDesyncRole(CustomRoles.Sheriff, AllPlayers, senders, rolesMap, BaseRole: RoleTypes.Impostor);
-                AssignDesyncRole(CustomRoles.Arsonist, AllPlayers, senders, rolesMap, BaseRole: RoleTypes.Impostor);
-                AssignDesyncRole(CustomRoles.Jackal, AllPlayers, senders, rolesMap, BaseRole: RoleTypes.Impostor);
-                MakeDesyncSender(senders, rolesMap);
             }
             //以下、バニラ側の役職割り当てが入る
         }
@@ -233,13 +250,14 @@ namespace TownOfHost
             if (Options.CurrentGameMode == CustomGameMode.HideAndSeek)
             {
                 SetColorPatch.IsAntiGlitchDisabled = true;
-                foreach (var pc in Main.AllPlayerControls)
-                {
-                    if (pc.Is(CustomRoleTypes.Impostor))
-                        pc.RpcSetColor(0);
-                    else if (pc.Is(CustomRoleTypes.Crewmate))
-                        pc.RpcSetColor(1);
-                }
+                if (!Main.HnSFlag)
+                    foreach (var pc in Main.AllPlayerControls)
+                    {
+                        if (pc.Is(CustomRoleTypes.Impostor))
+                            pc.RpcSetColor(0);
+                        else if (pc.Is(CustomRoleTypes.Crewmate))
+                            pc.RpcSetColor(1);
+                    }
 
                 //役職設定処理
                 AssignCustomRolesFromList(CustomRoles.HASFox, Crewmates);
@@ -251,15 +269,24 @@ namespace TownOfHost
                 }
                 //色設定処理
                 SetColorPatch.IsAntiGlitchDisabled = true;
-
                 GameEndChecker.SetPredicateToHideAndSeek();
+            }
+            else if (Options.CurrentGameMode == CustomGameMode.TaskBattle)
+            {
+                AssignCustomRolesFromList(CustomRoles.TaskPlayerB, Crewmates);
+                foreach (var pair in PlayerState.AllPlayerStates)
+                {
+                    //RPCによる同期
+                    ExtendedPlayerControl.RpcSetCustomRole(pair.Key, pair.Value.MainRole);
+                }
+                GameEndChecker.SetPredicateToTaskBattle();
             }
             else
             {
                 foreach (var role in CustomRolesHelper.AllRoles.Where(x => x < CustomRoles.NotAssigned))
                 {
                     if (role.IsVanilla()) continue;
-                    if (role is CustomRoles.Sheriff or CustomRoles.Arsonist or CustomRoles.Jackal) continue;
+                    if (CustomRoleManager.GetRoleInfo(role) is SimpleRoleInfo info && info.RequireResetCam) continue;
                     var baseRoleTypes = role.GetRoleTypes() switch
                     {
                         RoleTypes.Impostor => Impostors,
@@ -453,7 +480,7 @@ namespace TownOfHost
             int count = 0;
             foreach (var role in CustomRolesHelper.AllRoles.Where(x => x < CustomRoles.NotAssigned))
             {
-                if (role is CustomRoles.Sheriff or CustomRoles.Arsonist or CustomRoles.Jackal) continue;
+                if (CustomRoleManager.GetRoleInfo(role) is SimpleRoleInfo info && info.RequireResetCam) continue;
                 if (role == CustomRoles.Egoist && Main.NormalOptions.GetInt(Int32OptionNames.NumImpostors) <= 1) continue;
                 if (role.GetRoleTypes() == roleTypes)
                     count += role.GetRealCount();

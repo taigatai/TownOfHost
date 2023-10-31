@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using UnityEngine;
+using Hazel;
 
-using TownOfHost.Roles.Core;
+//using TownOfHost.Roles.Core;
+//using TownOfHost.Roles.Neutral;
+//アプデ対応の参考
+//https://github.com/Hyz-sui/TownOfHost-H
 
 namespace TownOfHost
 {
@@ -31,7 +35,17 @@ namespace TownOfHost
             }
         }
     }
-    [HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.RepairSystem))]
+
+    [HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.UpdateSystem), typeof(SystemTypes), typeof(PlayerControl), typeof(MessageReader))]
+    public static class MessageReaderUpdateSystemPatch
+    {
+        public static void Postfix(ShipStatus __instance, [HarmonyArgument(0)] SystemTypes systemType, [HarmonyArgument(1)] PlayerControl player, [HarmonyArgument(2)] MessageReader reader)
+        {
+            RepairSystemPatch.Postfix();
+        }
+    }
+
+    [HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.UpdateSystem), typeof(SystemTypes), typeof(PlayerControl), typeof(byte))]
     class RepairSystemPatch
     {
         public static bool Prefix(ShipStatus __instance,
@@ -39,14 +53,7 @@ namespace TownOfHost
             [HarmonyArgument(1)] PlayerControl player,
             [HarmonyArgument(2)] byte amount)
         {
-            if (systemType == SystemTypes.Sabotage)
-            {
-                Logger.Info("SystemType: " + systemType.ToString() + ", PlayerName: " + player.GetNameWithRole() + ", SabotageType: " + (SystemTypes)amount, "RepairSystem");
-            }
-            else
-            {
-                Logger.Info("SystemType: " + systemType.ToString() + ", PlayerName: " + player.GetNameWithRole() + ", amount: " + amount, "RepairSystem");
-            }
+            Logger.Info("SystemType: " + systemType.ToString() + ", PlayerName: " + player.GetNameWithRole() + ", amount: " + amount, "RepairSystem");
 
             if (RepairSender.enabled && AmongUsClient.Instance.NetworkMode != NetworkModes.OnlineGame)
             {
@@ -54,39 +61,13 @@ namespace TownOfHost
             }
             if (!AmongUsClient.Instance.AmHost) return true; //以下、ホストのみ実行
 
-            if (systemType == SystemTypes.Sabotage)
-            {
-                var nextSabotage = (SystemTypes)amount;
-                //HASモードではサボタージュ不可
-                if (Options.CurrentGameMode == CustomGameMode.HideAndSeek || Options.IsStandardHAS) return false;
-                var roleClass = player.GetRoleClass();
-                if (roleClass != null)
-                {
-                    return roleClass.CanSabotage(nextSabotage);
-                }
-                else
-                {
-                    return CanSabotage(player, nextSabotage);
-                }
-            }
-            // カメラ無効時，バニラプレイヤーはカメラを開けるので点滅させない
-            else if (systemType == SystemTypes.Security && amount == 1)
-            {
-                var camerasDisabled = (MapNames)Main.NormalOptions.MapId switch
-                {
-                    MapNames.Skeld => Options.DisableSkeldCamera.GetBool(),
-                    MapNames.Polus => Options.DisablePolusCamera.GetBool(),
-                    MapNames.Airship => Options.DisableAirshipCamera.GetBool(),
-                    _ => false,
-                };
-                return !camerasDisabled;
-            }
             else
             {
-                return CustomRoleManager.OnSabotage(player, systemType, amount);
+                //return CustomRoleManager.OnSabotage(player, systemType, amount);
             }
+            return true;
         }
-        public static void Postfix(ShipStatus __instance)
+        public static void Postfix()
         {
             Camouflage.CheckCamouflage();
         }
@@ -103,53 +84,11 @@ namespace TownOfHost
         {
             if (DoorIds.Contains(amount)) foreach (var id in DoorIds)
                 {
-                    __instance.RpcRepairSystem(SystemTypes.Doors, id);
+                    __instance.RpcUpdateSystem(SystemTypes.Doors, (byte)id);
                 }
-        }
-        private static bool CanSabotage(PlayerControl player, SystemTypes systemType)
-        {
-            //サボタージュ出来ないキラー役職はサボタージュ自体をキャンセル
-            if (!player.Is(CustomRoleTypes.Impostor))
-            {
-                return false;
-            }
-            return true;
         }
         public static bool OnSabotage(PlayerControl player, SystemTypes systemType, byte amount)
         {
-            if (player.Is(CustomRoleTypes.Madmate))
-            {
-                if (systemType == SystemTypes.Comms)
-                {
-                    //直せてしまったらキャンセル
-                    return !(!Options.MadmateCanFixComms.GetBool() && amount is 0 or 16 or 17);
-                }
-                if (systemType == SystemTypes.Electrical)
-                {
-                    //初回は関係なし(なぜかホスト名義で飛んでくるため誤爆注意)
-                    if (amount.HasAnyBit(128)) return true;
-
-                    //直せないならキャンセル
-                    if (!Options.MadmateCanFixLightsOut.GetBool())
-                        return false;
-
-                    //Airshipの特定の停電を直せないならキャンセル
-                    switch (Main.NormalOptions.MapId)
-                    {
-                        case 4:
-                            var console = player.closest.TryCast<Console>();
-                            if (console != null)
-                            {
-                                Logger.Info($"{console.GetType()}", "RepairSystemPatch.OnSabotage");
-                                Logger.Info($"{console.tag}", "RepairSystemPatch.OnSabotage");
-                            }
-                            if (Options.DisableAirshipViewingDeckLightsPanel.GetBool() && Vector2.Distance(player.transform.position, new(-12.93f, -11.28f)) <= 2f) return false;
-                            if (Options.DisableAirshipGapRoomLightsPanel.GetBool() && Vector2.Distance(player.transform.position, new(13.92f, 6.43f)) <= 2f) return false;
-                            if (Options.DisableAirshipCargoLightsPanel.GetBool() && Vector2.Distance(player.transform.position, new(30.56f, 2.12f)) <= 2f) return false;
-                            break;
-                    }
-                }
-            }
             return true;
         }
     }
@@ -168,6 +107,7 @@ namespace TownOfHost
         {
             Logger.CurrentMethod();
             Logger.Info("-----------ゲーム開始-----------", "Phase");
+            if (GameStates.IsModHost) Utils.WH_ShowActiveRoles();
 
             Utils.CountAlivePlayers(true);
         }

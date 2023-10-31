@@ -161,6 +161,7 @@ namespace TownOfHost
 
         public static void SetPredicateToNormal() => predicate = new NormalGameEndPredicate();
         public static void SetPredicateToHideAndSeek() => predicate = new HideAndSeekGameEndPredicate();
+        public static void SetPredicateToTaskBattle() => predicate = new TaskBattleGameEndPredicate();
 
         // ===== ゲーム終了条件 =====
         // 通常ゲーム用
@@ -183,9 +184,10 @@ namespace TownOfHost
 
                 int Imp = Utils.AlivePlayersCount(CountTypes.Impostor);
                 int Jackal = Utils.AlivePlayersCount(CountTypes.Jackal);
+                int Remotekiller = Utils.AlivePlayersCount(CountTypes.Remotekiller);
                 int Crew = Utils.AlivePlayersCount(CountTypes.Crew);
 
-                if (Imp == 0 && Crew == 0 && Jackal == 0) //全滅
+                if (Imp == 0 && Crew == 0 && Jackal == 0 && Remotekiller == 0) //全滅
                 {
                     reason = GameOverReason.ImpostorByKill;
                     CustomWinnerHolder.ResetAndSetWinner(CustomWinner.None);
@@ -195,19 +197,25 @@ namespace TownOfHost
                     reason = GameOverReason.ImpostorByKill;
                     CustomWinnerHolder.ResetAndSetWinner(CustomWinner.Lovers);
                 }
-                else if (Jackal == 0 && Crew <= Imp) //インポスター勝利
+                else if (Jackal == 0 && Remotekiller == 0 && Crew <= Imp) //インポスター勝利
                 {
                     reason = GameOverReason.ImpostorByKill;
                     CustomWinnerHolder.ResetAndSetWinner(CustomWinner.Impostor);
                 }
-                else if (Imp == 0 && Crew <= Jackal) //ジャッカル勝利
+                else if (Imp == 0 && Remotekiller == 0 && Crew <= Jackal) //ジャッカル勝利
                 {
                     reason = GameOverReason.ImpostorByKill;
                     CustomWinnerHolder.ResetAndSetWinner(CustomWinner.Jackal);
                     CustomWinnerHolder.WinnerRoles.Add(CustomRoles.Jackal);
-                    CustomWinnerHolder.WinnerRoles.Add(CustomRoles.JSchrodingerCat);
+                    CustomWinnerHolder.WinnerRoles.Add(CustomRoles.JackalMafia);
                 }
-                else if (Jackal == 0 && Imp == 0) //クルー勝利
+                else if (Imp == 0 && Jackal == 0 && Crew <= Remotekiller)
+                {
+                    reason = GameOverReason.ImpostorByKill;
+                    CustomWinnerHolder.ResetAndSetWinner(CustomWinner.Remotekiller);
+                    CustomWinnerHolder.WinnerRoles.Add(CustomRoles.Remotekiller);
+                }
+                else if (Jackal == 0 && Remotekiller == 0 && Imp == 0) //クルー勝利
                 {
                     reason = GameOverReason.HumansByVote;
                     CustomWinnerHolder.ResetAndSetWinner(CustomWinner.Crewmate);
@@ -260,7 +268,36 @@ namespace TownOfHost
             }
         }
     }
+    // ﾀｽﾊﾞﾄ用
+    class TaskBattleGameEndPredicate : GameEndPredicate
+    {
+        public override bool CheckForEndGame(out GameOverReason reason)
+        {
+            reason = GameOverReason.ImpostorByKill;
+            if (CustomWinnerHolder.WinnerTeam != CustomWinner.Default) return false;
 
+            if (CheckGameEndByLivingPlayers(out reason)) return true;
+
+            return false;
+        }
+
+        public bool CheckGameEndByLivingPlayers(out GameOverReason reason)
+        {
+            reason = GameOverReason.ImpostorByKill;
+
+            int TaskPlayerB = Utils.AlivePlayersCount(CountTypes.TaskPlayer);
+            if (TaskPlayerB == 1)
+            {
+                reason = GameOverReason.HumansByTask;
+                CustomWinnerHolder.ResetAndSetWinner(CustomWinner.TaskPlayerB);
+                foreach (var pc in Main.AllAlivePlayerControls)
+                    CustomWinnerHolder.WinnerIds.Add(pc.PlayerId);
+            }
+            else return false; //勝利条件未達成
+
+            return true;
+        }
+    }
     public abstract class GameEndPredicate
     {
         /// <summary>ゲームの終了条件をチェックし、CustomWinnerHolderに値を格納します。</summary>
@@ -305,7 +342,7 @@ namespace TownOfHost
             ISystemType sys = null;
             if (systems.ContainsKey(SystemTypes.Reactor)) sys = systems[SystemTypes.Reactor];
             else if (systems.ContainsKey(SystemTypes.Laboratory)) sys = systems[SystemTypes.Laboratory];
-
+            else if (systems.ContainsKey(SystemTypes.HeliSabotage)) sys = systems[SystemTypes.HeliSabotage];
             ICriticalSabotage critical;
             if (sys != null && // サボタージュ存在確認
                 (critical = sys.TryCast<ICriticalSabotage>()) != null && // キャスト可能確認

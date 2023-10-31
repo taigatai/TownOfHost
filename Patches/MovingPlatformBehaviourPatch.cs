@@ -28,8 +28,27 @@ public static class MovingPlatformBehaviourPatch
         }
         return true;
     }
+    public static byte MovingPlatformPlayerId = 200;
     [HarmonyPatch(nameof(MovingPlatformBehaviour.Use), typeof(PlayerControl)), HarmonyPrefix]
-    public static bool UsePrefix() => !isDisabled;
+    public static bool UsePrefix([HarmonyArgument(0)] PlayerControl player)
+    {
+        // プレイヤーがぬーん使用不可状態のときに使用をブロック
+        if (!PlayerState.GetByPlayerId(player.PlayerId).CanUseMovingPlatform)
+        {
+            return false;
+        }
+        if (!isDisabled)
+        {
+            MovingPlatformPlayerId = player.PlayerId;
+            _ = new LateTask(() => MovingPlatformPlayerId = 0, 5);
+        }
+        return !isDisabled;
+    }
+    public static bool UseMovingPlatform(this PlayerControl player)
+    {
+        if (player.PlayerId == MovingPlatformPlayerId) return true;
+        return false;
+    }
     [HarmonyPatch(nameof(MovingPlatformBehaviour.SetSide)), HarmonyPrefix]
     public static bool SetSidePrefix() => !isDisabled;
 }

@@ -11,6 +11,12 @@ namespace TownOfHost
         private static ClientActionItem JapaneseRoleName;
         private static ClientActionItem UnloadMod;
         private static ClientActionItem DumpLog;
+        private static ClientActionItem ChangeSomeLanguage;
+        private static ClientActionItem ForceEnd;
+        private static ClientActionItem WebHookD;
+        private static ClientActionItem Yomiage;
+        private static ClientActionItem UseZoom;
+        //private static ClientActionItem SyncYomiage;
 
         public static void Postfix(OptionsMenuBehaviour __instance)
         {
@@ -35,11 +41,41 @@ namespace TownOfHost
             {
                 DumpLog = ClientActionItem.Create("DumpLog", Utils.DumpLog, __instance);
             }
+            if (ChangeSomeLanguage == null || ChangeSomeLanguage.ToggleButton == null)
+            {
+                ChangeSomeLanguage = ClientOptionItem.Create("ChangeSomeLanguage", Main.ChangeSomeLanguage, __instance);
+            }
+            if (ForceEnd == null || ForceEnd.ToggleButton == null)
+            {
+                ForceEnd = ClientActionItem.Create("ForceEnd", ForceEndProcess, __instance);
+            }
+            if (WebHookD == null || WebHookD.ToggleButton == null)
+            {
+                WebHookD = ClientOptionItem.Create("UseWebHook", Main.UseWebHook, __instance);
+            }
+            if (Yomiage == null || Yomiage.ToggleButton == null)
+            {
+                Yomiage = ClientOptionItem.Create("UseYomiage", Main.UseYomiage, __instance);
+            }
+            if (UseZoom == null || UseZoom.ToggleButton == null)
+            {
+                UseZoom = ClientOptionItem.Create("UseZoom", Main.UseZoom, __instance);
+            }
+            //if (SyncYomiage == null || SyncYomiage.ToggleButton == null)
+            //{
+            //    SyncYomiage = ClientOptionItem.Create("SyncYomiage", Main.SyncYomiage, __instance);
+            //}
 
             if (ModUnloaderScreen.Popup == null)
             {
                 ModUnloaderScreen.Init(__instance);
             }
+        }
+        private static void ForceEndProcess()
+        {
+            if (!GameStates.IsInGame) return;
+            CustomWinnerHolder.ResetAndSetWinner(CustomWinner.Draw);
+            GameManager.Instance.LogicFlow.CheckEndCriteria();
         }
     }
 

@@ -37,7 +37,7 @@ namespace TownOfHost
                     if (player.Data.IsDead) return;
                     //LateTaskを入れるため、先に死亡判定を入れておく
                     player.Data.IsDead = true;
-                    new LateTask(() =>
+                    _ = new LateTask(() =>
                     {
                         Vector2 targetPos = (Vector2)TargetLadderData[player.PlayerId] + new Vector2(0.1f, 0f);
                         ushort num = (ushort)(NetHelpers.XRange.ReverseLerp(targetPos.x) * 65535f);
@@ -48,15 +48,16 @@ namespace TownOfHost
                                 .Write(num2)
                         .EndRpc();
                         sender.AutoStartRpc(player.NetId, (byte)RpcCalls.MurderPlayer)
-                                .WriteNetObject(player)
-                        .EndRpc();
+                                                        .WriteNetObject(player)
+                                                        .Write((int)ExtendedPlayerControl.SuccessFlags)
+                                                .EndRpc();
                         sender.SendMessage();
                         player.NetTransform.SnapTo(targetPos);
-                        player.MurderPlayer(player);
+                        player.MurderPlayer(player, ExtendedPlayerControl.SuccessFlags);
                         var state = PlayerState.GetByPlayerId(player.PlayerId);
                         state.DeathReason = CustomDeathReason.Fall;
                         state.SetDead();
-                    }, 0.05f, "LadderFallTask");
+                    }, 0.30f, "LadderFallTask");
                 }
             }
         }

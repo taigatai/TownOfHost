@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AmongUs.GameOptions;
 using HarmonyLib;
-using UnhollowerBaseLib;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 using static TownOfHost.Translator;
 using Object = UnityEngine.Object;
@@ -39,6 +39,12 @@ namespace TownOfHost
                     case StringNames.GameKillCooldown:
                         ob.Cast<NumberOption>().ValidRange = new FloatRange(0, 180);
                         break;
+                    case StringNames.GameNumImpostors:
+                        if (DebugModeManager.IsDebugMode)
+                        {
+                            ob.Cast<NumberOption>().ValidRange.min = 0;
+                        }
+                        break;
                     default:
                         break;
                 }
@@ -68,18 +74,18 @@ namespace TownOfHost
                     continue;
                 }
 
-                var tohSettings = Object.Instantiate(gameSettings, gameSettings.transform.parent);
-                tohSettings.name = tab + "Tab";
-                tohSettings.transform.FindChild("BackPanel").transform.localScale =
-                tohSettings.transform.FindChild("Bottom Gradient").transform.localScale = new Vector3(1.2f, 1f, 1f);
-                tohSettings.transform.FindChild("Background").transform.localScale = new Vector3(1.3f, 1f, 1f);
-                tohSettings.transform.FindChild("UI_Scrollbar").transform.localPosition += new Vector3(0.35f, 0f, 0f);
-                tohSettings.transform.FindChild("UI_ScrollbarTrack").transform.localPosition += new Vector3(0.35f, 0f, 0f);
-                tohSettings.transform.FindChild("GameGroup/SliderInner").transform.localPosition += new Vector3(-0.15f, 0f, 0f);
-                var tohMenu = tohSettings.transform.FindChild("GameGroup/SliderInner").GetComponent<GameOptionsMenu>();
+                var tohkSettings = Object.Instantiate(gameSettings, gameSettings.transform.parent);
+                tohkSettings.name = tab + "Tab";
+                tohkSettings.transform.FindChild("BackPanel").transform.localScale =
+                tohkSettings.transform.FindChild("Bottom Gradient").transform.localScale = new Vector3(1.2f, 1f, 1f);
+                tohkSettings.transform.FindChild("Background").transform.localScale = new Vector3(1.3f, 1f, 1f);
+                tohkSettings.transform.FindChild("UI_Scrollbar").transform.localPosition += new Vector3(0.35f, 0f, 0f);
+                tohkSettings.transform.FindChild("UI_ScrollbarTrack").transform.localPosition += new Vector3(0.35f, 0f, 0f);
+                tohkSettings.transform.FindChild("GameGroup/SliderInner").transform.localPosition += new Vector3(-0.15f, 0f, 0f);
+                var tohkMenu = tohkSettings.transform.FindChild("GameGroup/SliderInner").GetComponent<GameOptionsMenu>();
 
                 //OptionBehaviourを破棄
-                tohMenu.GetComponentsInChildren<OptionBehaviour>().Do(x => Object.Destroy(x.gameObject));
+                tohkMenu.GetComponentsInChildren<OptionBehaviour>().Do(x => Object.Destroy(x.gameObject));
 
                 var scOptions = new List<OptionBehaviour>();
                 foreach (var option in OptionItem.AllOptions)
@@ -87,7 +93,7 @@ namespace TownOfHost
                     if (option.Tab != (TabGroup)tab) continue;
                     if (option.OptionBehaviour == null)
                     {
-                        var stringOption = Object.Instantiate(template, tohMenu.transform);
+                        var stringOption = Object.Instantiate(template, tohkMenu.transform);
                         scOptions.Add(stringOption);
                         stringOption.OnValueChanged = new System.Action<OptionBehaviour>((o) => { });
                         stringOption.TitleText.text = option.Name;
@@ -105,15 +111,15 @@ namespace TownOfHost
                     }
                     option.OptionBehaviour.gameObject.SetActive(true);
                 }
-                tohMenu.Children = scOptions.ToArray();
-                tohSettings.gameObject.SetActive(false);
-                menus.Add(tohSettings.gameObject);
+                tohkMenu.Children = scOptions.ToArray();
+                tohkSettings.gameObject.SetActive(false);
+                menus.Add(tohkSettings.gameObject);
 
-                var tohTab = Object.Instantiate(roleTab, roleTab.transform.parent);
-                tohTab.transform.FindChild("Hat Button").FindChild("Icon").GetComponent<SpriteRenderer>().sprite = Utils.LoadSprite($"TownOfHost.Resources.TabIcon_{tab}.png", 100f);
-                tabs.Add(tohTab);
-                var tohTabHighlight = tohTab.transform.FindChild("Hat Button").FindChild("Tab Background").GetComponent<SpriteRenderer>();
-                highlights.Add(tohTabHighlight);
+                var tohkTab = Object.Instantiate(roleTab, roleTab.transform.parent);
+                tohkTab.transform.FindChild("Hat Button").FindChild("Icon").GetComponent<SpriteRenderer>().sprite = Utils.LoadSprite($"TownOfHost.Resources.TabIcon_{tab}.png", 100f);
+                tabs.Add(tohkTab);
+                var tohkTabHighlight = tohkTab.transform.FindChild("Hat Button").FindChild("Tab Background").GetComponent<SpriteRenderer>();
+                highlights.Add(tohkTabHighlight);
             }
 
             for (var i = 0; i < tabs.Count; i++)
@@ -244,8 +250,8 @@ namespace TownOfHost
         {
             var option = OptionItem.AllOptions.FirstOrDefault(opt => opt.OptionBehaviour == __instance);
             if (option == null) return true;
-
-            option.SetValue(option.CurrentValue + 1);
+            if (option.Id == 1 && option.CurrentValue == 1 && !Main.TaskBattleOptionv) option.CurrentValue++;
+            option.SetValue(option.CurrentValue + (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ? 5 : 1));
             return false;
         }
     }
@@ -257,8 +263,8 @@ namespace TownOfHost
         {
             var option = OptionItem.AllOptions.FirstOrDefault(opt => opt.OptionBehaviour == __instance);
             if (option == null) return true;
-
-            option.SetValue(option.CurrentValue - 1);
+            if (option.Id == 1 && option.CurrentValue == 0 && !Main.TaskBattleOptionv) option.CurrentValue--;
+            option.SetValue(option.CurrentValue - (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ? 5 : 1));
             return false;
         }
     }

@@ -70,6 +70,11 @@ namespace TownOfHost
             BanManager.CheckBanPlayer(client);
             BanManager.CheckDenyNamePlayer(client);
             RPC.RpcVersionCheck();
+            if (AmongUsClient.Instance.AmHost)
+            {
+                RPC.RpcSyncRoomTimer();
+                RPC.SyncYomiage();
+            }
         }
     }
     [HarmonyPatch(typeof(AmongUsClient), nameof(AmongUsClient.OnPlayerLeft))]
@@ -102,6 +107,7 @@ namespace TownOfHost
                 AntiBlackout.OnDisconnect(data.Character.Data);
                 PlayerGameOptionsSender.RemoveSender(data.Character);
             }
+            Main.playerVersion.Remove(data.Character.PlayerId);
             Logger.Info($"{data.PlayerName}(ClientID:{data.Id})が切断(理由:{reason}, ping:{AmongUsClient.Instance.Ping})", "Session");
         }
     }
@@ -113,14 +119,15 @@ namespace TownOfHost
             if (AmongUsClient.Instance.AmHost)
             {
                 OptionItem.SyncAllOptions();
-                new LateTask(() =>
+                _ = new LateTask(() =>
                 {
                     if (client.Character == null) return;
+                    if (AmongUsClient.Instance.IsGamePublic) Utils.SendMessage(string.Format(GetString("Message.AnnounceTOH-K"), Main.PluginVersion), client.Character.PlayerId);
                     TemplateManager.SendTemplate("welcome", client.Character.PlayerId, true);
                 }, 3f, "Welcome Message");
                 if (Options.AutoDisplayLastResult.GetBool() && PlayerState.AllPlayerStates.Count != 0 && Main.clientIdList.Contains(client.Id))
                 {
-                    new LateTask(() =>
+                    _ = new LateTask(() =>
                     {
                         if (!AmongUsClient.Instance.IsGameStarted && client.Character != null)
                         {
@@ -131,7 +138,7 @@ namespace TownOfHost
                 }
                 if (Options.AutoDisplayKillLog.GetBool() && PlayerState.AllPlayerStates.Count != 0 && Main.clientIdList.Contains(client.Id))
                 {
-                    new LateTask(() =>
+                    _ = new LateTask(() =>
                     {
                         if (!GameStates.IsInGame && client.Character != null)
                         {

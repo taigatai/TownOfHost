@@ -1,8 +1,8 @@
 using System.Globalization;
 using HarmonyLib;
 using InnerNet;
-using TownOfHost.Modules;
 using UnityEngine;
+using TownOfHost.Modules;
 using static TownOfHost.Translator;
 
 namespace TownOfHost
@@ -13,16 +13,19 @@ namespace TownOfHost
         public static bool Prefix(GameStartManager __instance)
         {
             // 定数設定による公開ルームブロック
+            if (!AmongUsClient.Instance.AmHost) return false;
             if (!Main.AllowPublicRoom)
             {
-                var message = GetString("DisabledByProgram");
+                var message = "";
+                message = GetString("DisabledByProgram");
                 Logger.Info(message, "MakePublicPatch");
                 Logger.SendInGame(message);
                 return false;
             }
-            if (ModUpdater.isBroken || ModUpdater.hasUpdate)
+            if (ModUpdater.isBroken || ModUpdater.hasUpdate || !VersionChecker.IsSupported)
             {
                 var message = "";
+                if (!VersionChecker.IsSupported) message = GetString("UnsupportedVersion");
                 if (ModUpdater.isBroken) message = GetString("ModBrokenMessage");
                 if (ModUpdater.hasUpdate) message = GetString("CanNotJoinPublicRoomNoLatest");
                 Logger.Info(message, "MakePublicPatch");
@@ -37,19 +40,30 @@ namespace TownOfHost
     {
         public static void Postfix(MMOnlineManager __instance)
         {
-            if (!(ModUpdater.hasUpdate || ModUpdater.isBroken)) return;
+            if (!(ModUpdater.hasUpdate || ModUpdater.isBroken || !VersionChecker.IsSupported)) return;
             var obj = GameObject.Find("FindGameButton");
             if (obj)
             {
                 obj?.SetActive(false);
                 var parentObj = obj.transform.parent.gameObject;
-                var textObj = Object.Instantiate<TMPro.TextMeshPro>(obj.transform.FindChild("Text_TMP").GetComponent<TMPro.TextMeshPro>());
+                var textObj = UnityEngine.Object.Instantiate<TMPro.TextMeshPro>(obj.transform.FindChild("Text_TMP").GetComponent<TMPro.TextMeshPro>());
                 textObj.transform.position = new Vector3(1f, -0.3f, 0);
                 textObj.name = "CanNotJoinPublic";
                 textObj.DestroyTranslator();
-                var message = ModUpdater.isBroken ? $"<size=2>{Utils.ColorString(Color.red, GetString("ModBrokenMessage"))}</size>"
-                    : $"<size=2>{Utils.ColorString(Color.red, GetString("CanNotJoinPublicRoomNoLatest"))}</size>";
-                textObj.text = message;
+                string message = "";
+                if (ModUpdater.hasUpdate)
+                {
+                    message = GetString("CanNotJoinPublicRoomNoLatest");
+                }
+                else if (ModUpdater.isBroken)
+                {
+                    message = GetString("ModBrokenMessage");
+                }
+                else if (!VersionChecker.IsSupported)
+                {
+                    message = GetString("UnsupportedVersion");
+                }
+                textObj.text = $"<size=2>{Utils.ColorString(Color.red, message)}</size>";
             }
         }
     }
@@ -106,18 +120,6 @@ namespace TownOfHost
             if (ban) BanManager.AddBanPlayer(AmongUsClient.Instance.GetRecentClient(clientId));
         }
     }
-    [HarmonyPatch(typeof(ResolutionManager), nameof(ResolutionManager.SetResolution))]
-    class SetResolutionManager
-    {
-        public static void Postfix()
-        {
-            if (MainMenuManagerPatch.discordButton != null)
-                MainMenuManagerPatch.discordButton.transform.position = Vector3.Reflect(MainMenuManagerPatch.template.transform.position, Vector3.left);
-            if (MainMenuManagerPatch.updateButton != null)
-                MainMenuManagerPatch.updateButton.transform.position = MainMenuManagerPatch.template.transform.position + new Vector3(0.25f, 0.75f);
-        }
-    }
-
     [HarmonyPatch(typeof(InnerNetClient), nameof(InnerNetClient.SendAllStreamedObjects))]
     class InnerNetObjectSerializePatch
     {

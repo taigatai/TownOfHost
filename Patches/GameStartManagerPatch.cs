@@ -8,6 +8,7 @@ using InnerNet;
 using TMPro;
 using UnityEngine;
 using Object = UnityEngine.Object;
+using TownOfHost.Modules;
 using static TownOfHost.Translator;
 using TownOfHost.Roles;
 
@@ -15,6 +16,8 @@ namespace TownOfHost
 {
     public class GameStartManagerPatch
     {
+        public static float GetTimer() => timer;
+        public static float SetTimer(float time) => timer = time;
         private static float timer = 600f;
         private static TextMeshPro warningText;
         public static TextMeshPro HideName;
@@ -35,8 +38,9 @@ namespace TownOfHost
                 HideName = Object.Instantiate(__instance.GameRoomNameCode, __instance.GameRoomNameCode.transform);
                 HideName.gameObject.SetActive(true);
                 HideName.name = "HideName";
-                ColorUtility.TryParseHtmlString(Main.ModColor, out var modColor);
-                HideName.color = ColorUtility.TryParseHtmlString(Main.HideColor.Value, out var color) ? color : modColor;
+                HideName.color =
+                    ColorUtility.TryParseHtmlString(Main.HideColor.Value, out var color) ? color :
+                    ColorUtility.TryParseHtmlString(Main.ModColor, out var modColor) ? modColor : HideName.color;
                 HideName.text = Main.HideName.Value;
 
                 warningText = Object.Instantiate(__instance.GameStartText, __instance.transform);
@@ -45,12 +49,12 @@ namespace TownOfHost
                 warningText.gameObject.SetActive(false);
 
                 timerText = Object.Instantiate(__instance.PlayerCounter, __instance.PlayerCounter.transform.parent);
-                timerText.autoSizeTextContainer = true;
+                timerText.autoSizeTextContainer = false;
                 timerText.fontSize = 3.2f;
                 timerText.name = "Timer";
                 timerText.DestroyChildren();
                 timerText.transform.localPosition += Vector3.down * 0.2f;
-                timerText.gameObject.SetActive(AmongUsClient.Instance.NetworkMode == NetworkModes.OnlineGame && AmongUsClient.Instance.AmHost);
+                timerText.gameObject.SetActive(AmongUsClient.Instance.NetworkMode == NetworkModes.OnlineGame);
 
                 cancelButton = Object.Instantiate(__instance.StartButton, __instance.transform);
                 cancelButton.name = "CancelButton";
@@ -64,11 +68,12 @@ namespace TownOfHost
                 buttonComponent.OnClick = new();
                 buttonComponent.OnClick.AddListener((Action)(() => __instance.ResetStartState()));
                 cancelButton.gameObject.SetActive(false);
+                GameObject.Find("StartText_TMP").transform.position += new Vector3(0f, 0.3f, 0f);
 
                 if (!AmongUsClient.Instance.AmHost) return;
 
                 // Make Public Button
-                if (ModUpdater.isBroken || ModUpdater.hasUpdate || !Main.AllowPublicRoom)
+                if ((ModUpdater.isBroken || ModUpdater.hasUpdate || !Main.AllowPublicRoom || !VersionChecker.IsSupported || !ModUpdater.publicok) && !ModUpdater.matchmaking)
                 {
                     __instance.MakePublicButton.color = Palette.DisabledClear;
                     __instance.privatePublicText.color = Palette.DisabledClear;
@@ -104,7 +109,6 @@ namespace TownOfHost
             public static void Postfix(GameStartManager __instance)
             {
                 if (!AmongUsClient.Instance) return;
-
                 string warningMessage = "";
                 if (AmongUsClient.Instance.AmHost)
                 {
@@ -158,12 +162,9 @@ namespace TownOfHost
 
                 // Lobby timer
                 if (
-                    !AmongUsClient.Instance.AmHost ||
-                    !GameData.Instance ||
-                    AmongUsClient.Instance.NetworkMode != NetworkModes.OnlineGame)
-                {
-                    return;
-                }
+                !GameData.Instance
+                || AmongUsClient.Instance.NetworkMode != NetworkModes.OnlineGame
+                ) return;
 
                 timer = Mathf.Max(0f, timer -= Time.deltaTime);
                 int minutes = (int)timer / 60;
@@ -189,7 +190,7 @@ namespace TownOfHost
                 SelectRandomMap();
 
                 var invalidColor = Main.AllPlayerControls.Where(p => p.Data.DefaultOutfit.ColorId < 0 || Palette.PlayerColors.Length <= p.Data.DefaultOutfit.ColorId);
-                if (invalidColor.Count() != 0)
+                if (invalidColor.Any())
                 {
                     var msg = GetString("Error.InvalidColor");
                     Logger.SendInGame(msg);
@@ -212,6 +213,7 @@ namespace TownOfHost
                 PlayerControl.LocalPlayer.RpcSyncSettings(GameOptionsManager.Instance.gameOptionsFactory.ToBytes(opt));
 
                 __instance.ReallyBegin(false);
+                TemplateManager.SendTemplate("Start", noErr: true);
                 return false;
             }
             private static void SelectRandomMap()
@@ -224,12 +226,14 @@ namespace TownOfHost
                     MIRAHQ     = 1
                     Polus      = 2
                     Dleks      = 3
-                    TheAirShip = 4*/
+                    TheAirShip = 4
+                    TheFungle  = 5*/
                     if (Options.AddedTheSkeld.GetBool()) randomMaps.Add(0);
                     if (Options.AddedMiraHQ.GetBool()) randomMaps.Add(1);
                     if (Options.AddedPolus.GetBool()) randomMaps.Add(2);
                     // if (Options.AddedDleks.GetBool()) RandomMaps.Add(3);
                     if (Options.AddedTheAirShip.GetBool()) randomMaps.Add(4);
+                    if (Options.AddedTheFungle.GetBool()) randomMaps.Add(5);
 
                     if (randomMaps.Count <= 0) return;
                     var mapsId = randomMaps[rand.Next(randomMaps.Count)];
