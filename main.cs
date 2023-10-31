@@ -5,35 +5,36 @@ using System.Reflection;
 using AmongUs.GameOptions;
 using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.IL2CPP;
+using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
-using UnhollowerRuntimeLib;
+using Il2CppInterop.Runtime.Injection;
 using UnityEngine;
 
+using TownOfHost.Attributes;
 using TownOfHost.Roles.Core;
 
 [assembly: AssemblyFileVersionAttribute(TownOfHost.Main.PluginVersion)]
 [assembly: AssemblyInformationalVersionAttribute(TownOfHost.Main.PluginVersion)]
 namespace TownOfHost
 {
-    [BepInPlugin(PluginGuid, "Town Of Host", PluginVersion)]
+    [BepInPlugin(PluginGuid, "Town Of Host-K", PluginVersion)]
     [BepInIncompatibility("jp.ykundesu.supernewroles")]
     [BepInProcess("Among Us.exe")]
     public class Main : BasePlugin
     {
         // == プログラム設定 / Program Config ==
         // modの名前 / Mod Name (Default: Town Of Host)
-        public static readonly string ModName = "Town Of Host";
+        public static readonly string ModName = "Town Of Host-K";
         // modの色 / Mod Color (Default: #00bfff)
-        public static readonly string ModColor = "#00bfff";
+        public static readonly string ModColor = "#00c1ff";
         // 公開ルームを許可する / Allow Public Room (Default: true)
         public static readonly bool AllowPublicRoom = true;
         // フォークID / ForkId (Default: OriginalTOH)
-        public static readonly string ForkId = "OriginalTOH";
+        public static readonly string ForkId = "TOH-K";
         // Discordボタンを表示するか / Show Discord Button (Default: true)
         public static readonly bool ShowDiscordButton = true;
         // Discordサーバーの招待リンク / Discord Server Invite URL (Default: https://discord.gg/W5ug6hXB9V)
-        public static readonly string DiscordInviteUrl = "https://discord.gg/W5ug6hXB9V";
+        public static readonly string DiscordInviteUrl = "https://discord.gg/5DPqH8seFq";
         // ==========
         public const string OriginalForkId = "OriginalTOH"; // Don't Change The Value. / この値を変更しないでください。
         // == 認証設定 / Authentication Config ==
@@ -48,8 +49,10 @@ namespace TownOfHost
 
         // ==========
         //Sorry for many Japanese comments.
-        public const string PluginGuid = "com.emptybottle.townofhost";
-        public const string PluginVersion = "5.0.0";
+        public const string PluginGuid = "com.kymario.townofhost-k";
+        public const string PluginVersion = "5.1.14";
+        // サポートされている最低のAmongUsバージョン
+        public static readonly string LowestSupportedVersion = "2023.10.24";
         public Harmony Harmony { get; } = new Harmony(PluginGuid);
         public static Version version = Version.Parse(PluginVersion);
         public static BepInEx.Logging.ManualLogSource Logger;
@@ -65,7 +68,12 @@ namespace TownOfHost
         public static ConfigEntry<bool> ForceJapanese { get; private set; }
         public static ConfigEntry<bool> JapaneseRoleName { get; private set; }
         public static ConfigEntry<int> MessageWait { get; private set; }
-
+        public static ConfigEntry<bool> ChangeSomeLanguage { get; private set; }
+        public static ConfigEntry<bool> Hiderecommendedsettings { get; private set; }
+        public static ConfigEntry<bool> UseWebHook { get; private set; }
+        public static ConfigEntry<bool> UseYomiage { get; private set; }
+        public static ConfigEntry<bool> UseZoom { get; private set; }
+        public static ConfigEntry<bool> SyncYomiage { get; private set; }
         public static Dictionary<byte, PlayerVersion> playerVersion = new();
         //Preset Name Options
         public static ConfigEntry<string> Preset1 { get; private set; }
@@ -83,7 +91,7 @@ namespace TownOfHost
         public static Dictionary<(byte, byte), string> LastNotifyNames;
         public static Dictionary<byte, Color32> PlayerColors = new();
         public static Dictionary<byte, CustomDeathReason> AfterMeetingDeathPlayers = new();
-        public static Dictionary<CustomRoles, String> roleColors;
+        public static Dictionary<CustomRoles, string> roleColors;
         public static List<byte> ResetCamPlayerList;
         public static List<byte> winnerList;
         public static List<int> clientIdList;
@@ -92,6 +100,8 @@ namespace TownOfHost
         public static List<PlayerControl> LoversPlayers = new();
         public static bool isLoversDead = true;
         public static Dictionary<byte, float> AllPlayerKillCooldown = new();
+        public static bool HnSFlag = false;
+        public static bool TaskBattleOptionv = false;
 
         /// <summary>
         /// 基本的に速度の代入は禁止.スピードは増減で対応してください.
@@ -108,11 +118,14 @@ namespace TownOfHost
         public static float DefaultCrewmateVision;
         public static float DefaultImpostorVision;
         public static bool IsChristmas = DateTime.Now.Month == 12 && DateTime.Now.Day is 24 or 25;
-        public static bool IsInitialRelease = DateTime.Now.Month == 12 && DateTime.Now.Day is 4;
+        public static bool IsInitialRelease = DateTime.Now.Month == 10 && DateTime.Now.Day is 31;
+        public static bool IsHalloween = DateTime.Now.Month == 10 && DateTime.Now.Day is 31;
+        public static bool DebugAntiblackout = true;
+
         public const float RoleTextSize = 2f;
 
-        public static IEnumerable<PlayerControl> AllPlayerControls => PlayerControl.AllPlayerControls.ToArray().Where(p => p != null);
-        public static IEnumerable<PlayerControl> AllAlivePlayerControls => PlayerControl.AllPlayerControls.ToArray().Where(p => p != null && p.IsAlive());
+        public static IEnumerable<PlayerControl> AllPlayerControls => PlayerControl.AllPlayerControls.ToArray().Where(p => p != null && p.PlayerId <= 15);
+        public static IEnumerable<PlayerControl> AllAlivePlayerControls => PlayerControl.AllPlayerControls.ToArray().Where(p => p != null && p.IsAlive() && p.PlayerId <= 15);
 
         public static Main Instance;
 
@@ -121,13 +134,19 @@ namespace TownOfHost
             Instance = this;
 
             //Client Options
-            HideName = Config.Bind("Client Options", "Hide Game Code Name", "Town Of Host");
+            HideName = Config.Bind("Client Options", "Hide Game Code Name", "Town Of Host-K");
             HideColor = Config.Bind("Client Options", "Hide Game Code Color", $"{ModColor}");
             ForceJapanese = Config.Bind("Client Options", "Force Japanese", false);
             JapaneseRoleName = Config.Bind("Client Options", "Japanese Role Name", true);
+            ChangeSomeLanguage = Config.Bind("Client Options", "Change Some Language", false);
+            Hiderecommendedsettings = Config.Bind("Client Options", "Hide recommended settings", false);
+            UseWebHook = Config.Bind("Client Options", "UseWebHook", false);
+            UseYomiage = Config.Bind("Client Options", "UseYomiage", false);
+            UseZoom = Config.Bind("Client Options", "UseZoom", false);
+            SyncYomiage = Config.Bind("Client Options", "SyncYomiage", true);
             DebugKeyInput = Config.Bind("Authentication", "Debug Key", "");
 
-            Logger = BepInEx.Logging.Logger.CreateLogSource("TownOfHost");
+            Logger = BepInEx.Logging.Logger.CreateLogSource("TownOfHost-K");
             TownOfHost.Logger.Enable();
             TownOfHost.Logger.Disable("NotifyRoles");
             TownOfHost.Logger.Disable("SendRPC");
@@ -157,10 +176,7 @@ namespace TownOfHost
             LastKillCooldown = Config.Bind("Other", "LastKillCooldown", (float)30);
             LastShapeshifterCooldown = Config.Bind("Other", "LastShapeshifterCooldown", (float)30);
 
-            CustomWinnerHolder.Reset();
-            Translator.Init();
-            BanManager.Init();
-            TemplateManager.Init();
+            PluginModuleInitializerAttribute.InitializeAll();
 
             IRandom.SetInstance(new NetRandomWrapper());
 
@@ -171,23 +187,15 @@ namespace TownOfHost
 
                 roleColors = new Dictionary<CustomRoles, string>()
                 {
-                    //バニラ役職
-                    {CustomRoles.Crewmate, "#ffffff"},
-                    {CustomRoles.Engineer, "#8cffff"},
-                    {CustomRoles.Scientist, "#8cffff"},
-                    {CustomRoles.GuardianAngel, "#ffffff"},
-                    //インポスター、シェイプシフター
-                    //特殊インポスター役職
-                    //マッドメイト系役職
-                        //後で追加
+                    // マッドメイト役職
+                    {CustomRoles.SKMadmate, "#ff1919"},
                     //特殊クルー役職
-                    {CustomRoles.CSchrodingerCat, "#ffffff"}, //シュレディンガーの猫の派生
                     //ニュートラル役職
-                    {CustomRoles.EgoSchrodingerCat, "#5600ff"},
-                    {CustomRoles.JSchrodingerCat, "#00b4eb"},
                     //HideAndSeek
                     {CustomRoles.HASFox, "#e478ff"},
                     {CustomRoles.HASTroll, "#00ff00"},
+                    //TaskBattle
+                    {CustomRoles.TaskPlayerB, "#9adfff"},
                     // GM
                     {CustomRoles.GM, "#ff5b70"},
                     //サブ役職
@@ -198,18 +206,7 @@ namespace TownOfHost
 
                     {CustomRoles.NotAssigned, "#ffffff"}
                 };
-                foreach (var role in CustomRolesHelper.AllRoles)
-                {
-                    switch (role.GetCustomRoleTypes())
-                    {
-                        case CustomRoleTypes.Impostor:
-                        case CustomRoleTypes.Madmate:
-                            roleColors.TryAdd(role, "#ff1919");
-                            break;
-                        default:
-                            break;
-                    }
-                }
+
                 var type = typeof(RoleBase);
                 var roleClassArray =
                 CustomRoleManager.AllRolesClassType = Assembly.GetAssembly(type)
@@ -257,6 +254,7 @@ namespace TownOfHost
         Sniped,
         Revenge,
         Execution,
+        Infected,
         Disconnected,
         Fall,
         etc = -1
@@ -270,13 +268,18 @@ namespace TownOfHost
         Impostor = CustomRoles.Impostor,
         Crewmate = CustomRoles.Crewmate,
         Jester = CustomRoles.Jester,
+        PlagueDoctor = CustomRoles.PlagueDoctor,
         Terrorist = CustomRoles.Terrorist,
         Lovers = CustomRoles.Lovers,
         Executioner = CustomRoles.Executioner,
         Arsonist = CustomRoles.Arsonist,
         Egoist = CustomRoles.Egoist,
         Jackal = CustomRoles.Jackal,
+        Remotekiller = CustomRoles.Remotekiller,
+        Chef = CustomRoles.Chef,
+        CountKiller = CustomRoles.CountKiller,
         HASTroll = CustomRoles.HASTroll,
+        TaskPlayerB = CustomRoles.TaskPlayerB,
     }
     public enum AdditionalWinners
     {
@@ -285,6 +288,7 @@ namespace TownOfHost
         SchrodingerCat = CustomRoles.SchrodingerCat,
         Executioner = CustomRoles.Executioner,
         HASFox = CustomRoles.HASFox,
+        Chef = CustomRoles.Chef
     }
     /*public enum CustomRoles : byte
     {
@@ -299,7 +303,8 @@ namespace TownOfHost
         Streaming,
         Recording,
         RoomHost,
-        OriginalName
+        OriginalName,
+        Timer
     }
     public enum VoteMode
     {
