@@ -115,7 +115,7 @@ namespace TownOfHost
                 return CountTypes.None;
             }
 
-            return PlayerState.GetByPlayerId(player.PlayerId)?.countTypes ?? CountTypes.None;
+            return PlayerState.GetByPlayerId(player.PlayerId)?.CountType ?? CountTypes.None;
         }
         public static void RpcSetNameEx(this PlayerControl player, string name)
         {
@@ -175,7 +175,7 @@ namespace TownOfHost
             if (killer.AmOwner)
             {
                 killer.ProtectPlayer(target, colorId);
-                killer.MurderPlayer(target);
+                killer.MurderPlayer(target, SuccessFlags);
             }
             // Other Clients
             if (killer.PlayerId != 0)
@@ -188,6 +188,7 @@ namespace TownOfHost
                     .EndRpc();
                 sender.StartRpc(killer.NetId, (byte)RpcCalls.MurderPlayer)
                     .WriteNetObject((InnerNetObject)target)
+                    .Write((int)SuccessFlags)
                     .EndRpc();
                 sender.EndMessage();
                 sender.SendMessage();
@@ -215,12 +216,13 @@ namespace TownOfHost
             if (target == null) target = killer;
             if (killer.AmOwner)
             {
-                killer.MurderPlayer(target);
+                killer.MurderPlayer(target, SuccessFlags);
             }
             else
             {
                 MessageWriter messageWriter = AmongUsClient.Instance.StartRpcImmediately(killer.NetId, (byte)RpcCalls.MurderPlayer, SendOption.Reliable, killer.GetClientId());
                 messageWriter.WriteNetObject(target);
+                messageWriter.Write((int)SuccessFlags);
                 AmongUsClient.Instance.FinishRpcImmediately(messageWriter);
             }
         }
@@ -238,7 +240,10 @@ namespace TownOfHost
         }
         public static void RpcResetAbilityCooldown(this PlayerControl target)
         {
-            if (!AmongUsClient.Instance.AmHost) return; //ホスト以外が実行しても何も起こさない
+            if (target == null || !AmongUsClient.Instance.AmHost)
+            {
+                return;
+            }
             Logger.Info($"アビリティクールダウンのリセット:{target.name}({target.PlayerId})", "RpcResetAbilityCooldown");
             if (PlayerControl.LocalPlayer == target)
             {
@@ -262,7 +267,7 @@ namespace TownOfHost
         }
         public static void RpcDesyncRepairSystem(this PlayerControl target, SystemTypes systemType, int amount)
         {
-            MessageWriter messageWriter = AmongUsClient.Instance.StartRpcImmediately(ShipStatus.Instance.NetId, (byte)RpcCalls.RepairSystem, SendOption.Reliable, target.GetClientId());
+            MessageWriter messageWriter = AmongUsClient.Instance.StartRpcImmediately(ShipStatus.Instance.NetId, (byte)RpcCalls.UpdateSystem, SendOption.Reliable, target.GetClientId());
             messageWriter.Write((byte)systemType);
             messageWriter.WriteNetObject(target);
             messageWriter.Write((byte)amount);
@@ -344,20 +349,24 @@ namespace TownOfHost
         {
             if (pc == null || !AmongUsClient.Instance.AmHost || pc.AmOwner) return;
 
-            var systemtypes = SystemTypes.Reactor;
-            if (Main.NormalOptions.MapId == 2) systemtypes = SystemTypes.Laboratory;
+            var systemtypes = (MapNames)Main.NormalOptions.MapId switch
+            {
+                MapNames.Polus => SystemTypes.Laboratory,
+                MapNames.Airship => SystemTypes.HeliSabotage,
+                _ => SystemTypes.Reactor,
+            };
 
-            new LateTask(() =>
+            _ = new LateTask(() =>
             {
                 pc.RpcDesyncRepairSystem(systemtypes, 128);
             }, 0f + delay, "Reactor Desync");
 
-            new LateTask(() =>
+            _ = new LateTask(() =>
             {
                 pc.RpcSpecificMurderPlayer();
             }, 0.2f + delay, "Murder To Reset Cam");
 
-            new LateTask(() =>
+            _ = new LateTask(() =>
             {
                 pc.RpcDesyncRepairSystem(systemtypes, 16);
                 if (Main.NormalOptions.MapId == 4) //Airship用
@@ -369,13 +378,17 @@ namespace TownOfHost
             if (pc == null) return;
             int clientId = pc.GetClientId();
             // Logger.Info($"{pc}", "ReactorFlash");
-            var systemtypes = SystemTypes.Reactor;
-            if (Main.NormalOptions.MapId == 2) systemtypes = SystemTypes.Laboratory;
+            var systemtypes = (MapNames)Main.NormalOptions.MapId switch
+            {
+                MapNames.Polus => SystemTypes.Laboratory,
+                MapNames.Airship => SystemTypes.HeliSabotage,
+                _ => SystemTypes.Reactor,
+            };
             float FlashDuration = Options.KillFlashDuration.GetFloat();
 
             pc.RpcDesyncRepairSystem(systemtypes, 128);
 
-            new LateTask(() =>
+            _ = new LateTask(() =>
             {
                 pc.RpcDesyncRepairSystem(systemtypes, 16);
 
@@ -405,7 +418,11 @@ namespace TownOfHost
                 CustomRoles.Sheriff => false,
                 CustomRoles.Egoist => true,
                 CustomRoles.Jackal => Jackal.CanVent,
+                CustomRoles.JackalMafia => JackalMafia.CanVent,
+                CustomRoles.Remotekiller => true,
                 CustomRoles.Arsonist => Arsonist.IsDouseDone(pc),
+                CustomRoles.Chef => false,
+                CustomRoles.CountKiller => CountKiller.CanVent,
                 _ => pc.Is(CustomRoleTypes.Impostor),
             };
         }
@@ -426,13 +443,9 @@ namespace TownOfHost
             }
 
             var isSidekickableCustomRole = player.GetRoleClass() is ISidekickable sidekickable && sidekickable.CanMakeSidekick();
-            if (player.Is(CustomRoles.Shapeshifter) || isSidekickableCustomRole)
-            {
-                return true;
-            }
 
-            // ISideKickable対応前の役職はこちら
-            return player.GetCustomRole().CanMakeMadmate();
+            return isSidekickableCustomRole ||
+                player.GetCustomRole().CanMakeMadmate(); // ISideKickable対応前の役職はこちら
         }
         public static void RpcExileV2(this PlayerControl player)
         {
@@ -440,15 +453,29 @@ namespace TownOfHost
             MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(player.NetId, (byte)RpcCalls.Exiled, SendOption.None, -1);
             AmongUsClient.Instance.FinishRpcImmediately(writer);
         }
+        //アプデ対応の参考
+        //https://github.com/Hyz-sui/TownOfHost-H
+        public static void RpcMurderPlayer(this PlayerControl killer, PlayerControl target)
+        {
+            if (AmongUsClient.Instance.AmClient)
+            {
+                killer.MurderPlayer(target, SuccessFlags);
+            }
+            MessageWriter messageWriter = AmongUsClient.Instance.StartRpcImmediately(killer.NetId, (byte)RpcCalls.MurderPlayer, SendOption.Reliable);
+            messageWriter.WriteNetObject(target);
+            messageWriter.Write((int)SuccessFlags);
+            AmongUsClient.Instance.FinishRpcImmediately(messageWriter);
+        }
         public static void RpcMurderPlayerV2(this PlayerControl killer, PlayerControl target)
         {
             if (target == null) target = killer;
             if (AmongUsClient.Instance.AmClient)
             {
-                killer.MurderPlayer(target);
+                killer.MurderPlayer(target, SuccessFlags);
             }
             MessageWriter messageWriter = AmongUsClient.Instance.StartRpcImmediately(killer.NetId, (byte)RpcCalls.MurderPlayer, SendOption.None, -1);
             messageWriter.WriteNetObject(target);
+            messageWriter.Write((int)SuccessFlags);
             AmongUsClient.Instance.FinishRpcImmediately(messageWriter);
             Utils.NotifyRoles();
         }
@@ -488,7 +515,10 @@ namespace TownOfHost
             return
                 player.GetCustomRole() is
                 CustomRoles.Egoist or
-                CustomRoles.Jackal;
+                CustomRoles.Jackal or
+                CustomRoles.JackalMafia or
+                CustomRoles.Remotekiller or
+                CustomRoles.CountKiller;
         }
         public static bool KnowDeathReason(this PlayerControl seer, PlayerControl seen)
         {
@@ -568,6 +598,8 @@ namespace TownOfHost
             }
             return null;
         }
+        /// <summary>現在守護されているかどうか</summary>
+        public static bool IsProtected(this PlayerControl self) => self.protectedByGuardianId > -1;
 
         //汎用
         public static bool Is(this PlayerControl target, CustomRoles role) =>
@@ -594,5 +626,8 @@ namespace TownOfHost
             }
             return !state.IsDead;
         }
+        //アプデ対応の参考
+        //https://github.com/Hyz-sui/TownOfHost-H
+        public const MurderResultFlags SuccessFlags = MurderResultFlags.Succeeded | MurderResultFlags.DecisionByHost;
     }
 }

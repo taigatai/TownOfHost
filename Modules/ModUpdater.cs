@@ -14,7 +14,7 @@ namespace TownOfHost
     [HarmonyPatch]
     public class ModUpdater
     {
-        private static readonly string URL = "https://api.github.com/repos/tukasa0001/TownOfHost";
+        private static readonly string URL = "https://api.github.com/repos/KYMario/TownOfHost-K";
         public static bool hasUpdate = false;
         public static bool isBroken = false;
         public static bool isChecked = false;
@@ -22,10 +22,13 @@ namespace TownOfHost
         public static string latestTitle = null;
         public static string downloadUrl = null;
         public static GenericPopup InfoPopup;
+        public static bool DameVersion = false;
+        public static bool publicok = Main.AllowPublicRoom;
+        public static bool matchmaking = false;
+        public static string body = "詳細のチェックに失敗しました";
 
-        [HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.Start)), HarmonyPrefix]
-        [HarmonyPriority(2)]
-        public static void Start_Prefix(MainMenuManager __instance)
+        [HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.Start)), HarmonyPostfix, HarmonyPriority(Priority.LowerThanNormal)]
+        public static void StartPostfix()
         {
             DeleteOldDLL();
             InfoPopup = UnityEngine.Object.Instantiate(Twitch.TwitchManager.Instance.TwitchPopup);
@@ -35,9 +38,9 @@ namespace TownOfHost
             {
                 CheckRelease(Main.BetaBuildURL.Value != "").GetAwaiter().GetResult();
             }
-            MainMenuManagerPatch.updateButton.SetActive(hasUpdate);
-            MainMenuManagerPatch.updateButton.transform.position = MainMenuManagerPatch.template.transform.position + new Vector3(0.25f, 0.75f);
-            MainMenuManagerPatch.updateButton.transform.GetChild(0).GetComponent<TMPro.TMP_Text>().SetText($"{GetString("updateButton")}\n{latestTitle}");
+            MainMenuManagerPatch.UpdateButton.gameObject.SetActive(hasUpdate);
+            MainMenuManagerPatch.UpdateButton.transform.Find("FontPlacer/Text_TMP").GetComponent<TMPro.TMP_Text>().SetText($"{GetString("updateButton")}\n{latestTitle}");
+            MainMenuManagerPatch.UpdateButton2.gameObject.SetActive(hasUpdate);
         }
         public static async Task<bool> CheckRelease(bool beta = false)
         {
@@ -47,7 +50,7 @@ namespace TownOfHost
                 string result;
                 using (HttpClient client = new())
                 {
-                    client.DefaultRequestHeaders.Add("User-Agent", "TownOfHost Updater");
+                    client.DefaultRequestHeaders.Add("User-Agent", "TownOfHost-K Updater");
                     using var response = await client.GetAsync(new Uri(url), HttpCompletionOption.ResponseContentRead);
                     if (!response.IsSuccessStatusCode || response.Content == null)
                     {
@@ -70,17 +73,17 @@ namespace TownOfHost
                     JArray assets = data["assets"].Cast<JArray>();
                     for (int i = 0; i < assets.Count; i++)
                     {
-                        if (assets[i]["name"].ToString() == "TownOfHost_Steam.dll" && Constants.GetPlatformType() == Platforms.StandaloneSteamPC)
+                        if (assets[i]["name"].ToString() == "TownOfHost-K_Steam.dll" && Constants.GetPlatformType() == Platforms.StandaloneSteamPC)
                         {
                             downloadUrl = assets[i]["browser_download_url"].ToString();
                             break;
                         }
-                        if (assets[i]["name"].ToString() == "TownOfHost_Epic.dll" && Constants.GetPlatformType() == Platforms.StandaloneEpicPC)
+                        if (assets[i]["name"].ToString() == "TownOfHost-K_Epic.dll" && Constants.GetPlatformType() == Platforms.StandaloneEpicPC)
                         {
                             downloadUrl = assets[i]["browser_download_url"].ToString();
                             break;
                         }
-                        if (assets[i]["name"].ToString() == "TownOfHost.dll")
+                        if (assets[i]["name"].ToString() == "TownOfHost-K.dll")
                             downloadUrl = assets[i]["browser_download_url"].ToString();
                     }
                     hasUpdate = latestVersion.CompareTo(Main.version) > 0;
@@ -92,6 +95,8 @@ namespace TownOfHost
                 }
                 isChecked = true;
                 isBroken = false;
+                body = data["body"].ToString();
+                if (data["body"].ToString().Contains("[使用禁止バージョン]")) DameVersion = true;
             }
             catch (Exception ex)
             {
@@ -145,19 +150,24 @@ namespace TownOfHost
         {
             try
             {
-                using WebClient client = new();
-                client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(DownloadCallBack);
-                client.DownloadFileAsync(new Uri(url), "BepInEx/plugins/TownOfHost.dll");
-                while (client.IsBusy) await Task.Delay(1);
-                ShowPopup(GetString("updateRestart"), true);
+                using HttpClient client = new();
+                using var response = await client.GetAsync(url);
+                if (response.IsSuccessStatusCode)
+                {
+                    using var content = response.Content;
+                    using var stream = content.ReadAsStream();
+                    using var file = new FileStream("BepInEx/plugins/TownOfHost-K.dll", FileMode.Create, FileAccess.Write);
+                    stream.CopyTo(file);
+                    ShowPopup(GetString("updateRestart"), true);
+                    return true;
+                }
             }
             catch (Exception ex)
             {
                 Logger.Error($"ダウンロードに失敗しました。\n{ex}", "DownloadDLL", false);
-                ShowPopup(GetString("updateManually"), true);
-                return false;
             }
-            return true;
+            ShowPopup(GetString("updateManually"), true);
+            return false;
         }
         private static void DownloadCallBack(object sender, DownloadProgressChangedEventArgs e)
         {
@@ -172,11 +182,54 @@ namespace TownOfHost
                 if (button != null)
                 {
                     button.gameObject.SetActive(showButton);
-                    button.GetChild(0).GetComponent<TextTranslatorTMP>().TargetText = StringNames.QuitLabel;
+                    button.GetComponentInChildren<TextTranslatorTMP>().TargetText = StringNames.QuitLabel;
                     button.GetComponent<PassiveButton>().OnClick = new();
-                    button.GetComponent<PassiveButton>().OnClick.AddListener((Action)(() => Application.Quit()));
+                    button.GetComponent<PassiveButton>().OnClick.AddListener((Action)(() =>
+                    {
+                        Application.OpenURL("https://github.com/KYMario/TownOfHost-K/releases/latest");
+                        Application.Quit();
+                    }));
                 }
             }
+        }
+        public static async Task<bool> CheckR(int check)
+        {
+            string result;
+            using (HttpClient client = new())
+            {
+                client.DefaultRequestHeaders.Add("User-Agent", "TownOfHost-K");
+                using var response = await client.GetAsync(new Uri(ModUpdater.URL + "/releases/latest"), HttpCompletionOption.ResponseContentRead);
+                if (!response.IsSuccessStatusCode || response.Content == null)
+                {
+                    Logger.Error($"ステータスコード: {response.StatusCode}", "CheckRelease-R");
+                    if (check == 0) return Main.AllowPublicRoom;
+                    else if (check == 1) return false;
+                }
+                result = await response.Content.ReadAsStringAsync();
+            }
+            JObject data = JObject.Parse(result);
+            if (check == 0)
+            {
+                if (data["body"].ToString().Contains("[公開ルームok]")) publicok = true;
+                else if (data["body"].ToString().Contains("[公開ルーム禁止！]")) publicok = false;
+                else publicok = Main.AllowPublicRoom;
+                if (data["body"].ToString().Contains("[マッチメイキングok]")) matchmaking = true;
+                else matchmaking = false;
+                return publicok;
+            }
+            else
+            if (check == 1)
+            {
+                return data["body"].ToString().Contains("[使用禁止バージョン]");
+            }
+            else
+            if (check == 2)
+            {
+                if (data["body"].ToString().Contains("[マッチメイキングok]")) matchmaking = true;
+                else matchmaking = false;
+                return matchmaking;
+            }
+            return false;
         }
     }
 }

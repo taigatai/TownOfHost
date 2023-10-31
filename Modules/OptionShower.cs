@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
+using TownOfHost.Roles;
 using TownOfHost.Roles.Core;
 using static TownOfHost.Translator;
 
@@ -27,6 +28,7 @@ namespace TownOfHost
             };
             //ゲームモードの表示
             sb.Append($"{Options.GameMode.GetName()}: {Options.GameMode.GetString()}\n\n");
+            sb.AppendFormat("{0}: {1}\n\n", RoleAssignManager.OptionAssignMode.GetName(), RoleAssignManager.OptionAssignMode.GetString());
             if (Options.HideGameSettings.GetBool() && !AmongUsClient.Instance.AmHost)
             {
                 sb.Append($"<color=#ff0000>{GetString("Message.HideGameSettings")}</color>");
@@ -38,7 +40,7 @@ namespace TownOfHost
                 {
                     //有効な役職一覧
                     sb.Append($"<color={Utils.GetRoleColorCode(CustomRoles.GM)}>{Utils.GetRoleName(CustomRoles.GM)}:</color> {Options.EnableGM.GetString()}\n\n");
-                    sb.Append(GetString("ActiveRolesList")).Append("\n");
+                    sb.Append(GetString("ActiveRolesList")).Append('\n');
                     foreach (var kvp in Options.CustomRoleSpawnChances)
                         if (kvp.Value.GameMode is CustomGameMode.Standard or CustomGameMode.All && kvp.Value.GetBool()) //スタンダードか全てのゲームモードで表示する役職
                             sb.Append($"{Utils.ColorString(Utils.GetRoleColor(kvp.Key), Utils.GetRoleName(kvp.Key))}: {kvp.Value.GetString()}×{kvp.Key.GetCount()}\n");
@@ -47,11 +49,16 @@ namespace TownOfHost
                 }
                 //有効な役職と詳細設定一覧
                 pages.Add("");
+                if (RoleAssignManager.OptionAssignMode.GetBool())
+                {
+                    ShowChildren(RoleAssignManager.OptionAssignMode, ref sb, Color.white);
+                    sb.Append('\n');
+                }
                 nameAndValue(Options.EnableGM);
                 foreach (var kvp in Options.CustomRoleSpawnChances)
                 {
                     if (!kvp.Key.IsEnable() || kvp.Value.IsHiddenOn(Options.CurrentGameMode)) continue;
-                    sb.Append("\n");
+                    sb.Append('\n');
                     sb.Append($"{Utils.ColorString(Utils.GetRoleColor(kvp.Key), Utils.GetRoleName(kvp.Key))}: {kvp.Value.GetString()}×{kvp.Key.GetCount()}\n");
                     ShowChildren(kvp.Value, ref sb, Utils.GetRoleColor(kvp.Key).ShadeColor(-0.5f), 1);
                     string rule = Utils.ColorString(Palette.ImpostorRed.ShadeColor(-0.5f), "┣ ");
@@ -76,7 +83,7 @@ namespace TownOfHost
 
                 foreach (var opt in OptionItem.AllOptions.Where(x => x.Id >= 90000 && !x.IsHiddenOn(Options.CurrentGameMode) && x.Parent == null))
                 {
-                    if (opt.IsHeader) sb.Append("\n");
+                    if (opt.IsHeader) sb.Append('\n');
                     sb.Append($"{opt.GetName()}: {opt.GetString()}\n");
                     if (opt.GetBool())
                         ShowChildren(opt, ref sb, Color.white, 1);
@@ -105,8 +112,11 @@ namespace TownOfHost
             foreach (var opt in option.Children.Select((v, i) => new { Value = v, Index = i + 1 }))
             {
                 if (opt.Value.Name == "Maximum") continue; //Maximumの項目は飛ばす
-                sb.Append(string.Concat(Enumerable.Repeat(Utils.ColorString(color, "┃"), deep - 1)));
-                sb.Append(Utils.ColorString(color, opt.Index == option.Children.Count ? "┗ " : "┣ "));
+                if (deep > 0)
+                {
+                    sb.Append(string.Concat(Enumerable.Repeat(Utils.ColorString(color, "┃"), deep - 1)));
+                    sb.Append(Utils.ColorString(color, opt.Index == option.Children.Count ? "┗ " : "┣ "));
+                }
                 sb.Append($"{opt.Value.GetName()}: {opt.Value.GetString()}\n");
                 if (opt.Value.GetBool()) ShowChildren(opt.Value, ref sb, color, deep + 1);
             }

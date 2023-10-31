@@ -16,6 +16,7 @@ namespace TownOfHost
         public static bool IsDebugMode => AmDebugger && EnableDebugMode != null && EnableDebugMode.GetBool();
 
         public static OptionItem EnableDebugMode;
+        public static OptionItem EnableTOHkDebugMode;
 
         public static void Auth(HashAuth auth, string input)
         {
@@ -27,6 +28,17 @@ namespace TownOfHost
             EnableDebugMode = BooleanOptionItem.Create(2, "EnableDebugMode", false, TabGroup.MainSettings, true)
                 .SetColor(Color.green)
                 .SetHidden(!AmDebugger);
+            /*.RegisterUpdateValueEvent((obj, args) =>
+            {
+                if (DestroyableSingleton<GameStartManager>.InstanceExists && Main.NormalOptions.NumImpostors == 0 && AmongUsClient.Instance.AmHost && !EnableDebugMode.GetBool())
+                {
+                    Main.NormalOptions.NumImpostors = 1;
+                }
+            });*/
+            EnableTOHkDebugMode = BooleanOptionItem.Create(3, "EnableTOHkDebugMode", false, TabGroup.MainSettings, true)
+                .SetColor(Color.green)
+                .SetHidden(!AmDebugger);
+
         }
     }
 }

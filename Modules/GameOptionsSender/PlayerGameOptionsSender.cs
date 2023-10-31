@@ -1,12 +1,12 @@
 using System.Linq;
 using AmongUs.GameOptions;
 using Hazel;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Linq;
 using InnerNet;
 using Mathf = UnityEngine.Mathf;
 
 using TownOfHost.Roles.Core;
-using TownOfHost.Roles.Neutral;
 
 namespace TownOfHost.Modules
 {
@@ -48,7 +48,7 @@ namespace TownOfHost.Modules
             else base.SendGameOptions();
         }
 
-        public override void SendOptionsArray(byte[] optionArray)
+        public override void SendOptionsArray(Il2CppStructArray<byte> optionArray)
         {
             for (byte i = 0; i < GameManager.Instance.LogicComponents.Count; i++)
             {
@@ -96,15 +96,6 @@ namespace TownOfHost.Modules
 
             var roleClass = player.GetRoleClass();
             roleClass?.ApplyGameOptions(opt);
-            switch (role)
-            {
-                case CustomRoles.EgoSchrodingerCat:
-                    opt.SetVision(true);
-                    break;
-                case CustomRoles.JSchrodingerCat:
-                    ((Jackal)roleClass).ApplyGameOptions(opt);
-                    break;
-            }
             foreach (var subRole in player.GetCustomSubRoles())
             {
                 switch (subRole)
@@ -140,11 +131,19 @@ namespace TownOfHost.Modules
             }
             if ((Options.CurrentGameMode == CustomGameMode.HideAndSeek || Options.IsStandardHAS) && Options.HideAndSeekKillDelayTimer > 0)
             {
-                opt.SetFloat(FloatOptionNames.ImpostorLightMod, 0f);
-                if (player.Is(CountTypes.Impostor))
+                if (!Main.HnSFlag)
                 {
-                    AURoleOptions.PlayerSpeedMod = Main.MinSpeed;
+                    opt.SetFloat(FloatOptionNames.ImpostorLightMod, 0f);
+                    if (player.Is(CountTypes.Impostor))
+                    {
+                        AURoleOptions.PlayerSpeedMod = Main.MinSpeed;
+                    }
                 }
+            }
+            if (Options.CurrentGameMode == CustomGameMode.TaskBattle && Options.TaskBattleCanVent.GetBool())
+            {
+                opt.SetFloat(FloatOptionNames.EngineerCooldown, Options.TaskBattleVentCooldown.GetFloat());
+                AURoleOptions.EngineerInVentMaxTime = 0;
             }
             MeetingTimeManager.ApplyGameOptions(opt);
 

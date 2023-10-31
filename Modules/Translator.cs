@@ -5,7 +5,8 @@ using System.Linq;
 using System.Text;
 using Csv;
 using HarmonyLib;
-using UnhollowerBaseLib;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using TownOfHost.Attributes;
 
 namespace TownOfHost
 {
@@ -13,6 +14,8 @@ namespace TownOfHost
     {
         public static Dictionary<string, Dictionary<int, string>> translateMaps;
         public const string LANGUAGE_FOLDER_NAME = "Language";
+
+        [PluginModuleInitializer]
         public static void Init()
         {
             Logger.Info("Language Dictionary Initialize...", "Translator");
@@ -90,8 +93,20 @@ namespace TownOfHost
                 {
                     res = str switch
                     {
-                        "Lovers" => "リア充",
-                        "LoversInfo" => "爆ぜろ",
+                        "Lovers" => "ラバーズ!?",
+                        "LoversInfo" => "<size=3>シェフが<size=1>毒入り<size=3>料理を渡してくれるはずだ",
+                        _ => res
+                    };
+                }
+                if (Main.IsHalloween)
+                {
+                    res = str switch
+                    {
+                        "Bakery" => "お菓子作りのパン屋",
+                        "BakeryInfo" => "今日はパンじゃなくてお菓子だよ！",
+                        "ChefInfo" => "パン屋とお菓子作りに苦戦中..",
+                        "TaskPlayerBInfo" => "タスクを誰よりも早く済ませ人にはお菓子が！？",
+                        "Message.Bakery1" => "ハッピーハロウィン！ パン屋がお菓子を作ったよ！",
                         _ => res
                     };
                 }
@@ -99,7 +114,7 @@ namespace TownOfHost
             if (!translateMaps.ContainsKey(str)) //translateMapsにない場合、StringNamesにあれば取得する
             {
                 var stringNames = EnumHelper.GetAllValues<StringNames>().Where(x => x.ToString() == str);
-                if (stringNames != null && stringNames.Count() > 0)
+                if (stringNames != null && stringNames.Any())
                     res = GetString(stringNames.FirstOrDefault());
             }
             return res;
@@ -125,7 +140,7 @@ namespace TownOfHost
                 Logger.Info($"カスタム翻訳ファイル「{filename}」を読み込み", "LoadCustomTranslation");
                 using StreamReader sr = new(path, Encoding.GetEncoding("UTF-8"));
                 string text;
-                string[] tmp = { };
+                string[] tmp = Array.Empty<string>();
                 while ((text = sr.ReadLine()) != null)
                 {
                     tmp = text.Split(":");

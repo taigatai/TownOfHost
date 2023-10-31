@@ -13,11 +13,21 @@ namespace TownOfHost
         byte PlayerId;
         public CustomRoles MainRole;
         public List<CustomRoles> SubRoles;
-        public CountTypes countTypes;
+        public CountTypes CountType { get; private set; }
         public bool IsDead { get; set; }
         public CustomDeathReason DeathReason { get; set; }
         public TaskState taskState;
         public bool IsBlackOut { get; set; }
+        private bool _canUseMovingPlatform = true;
+        public bool CanUseMovingPlatform
+        {
+            get => _canUseMovingPlatform;
+            set
+            {
+                Logger.Info($"ID: {PlayerId} の昇降機可用性を {value} に設定", nameof(PlayerState));
+                _canUseMovingPlatform = value;
+            }
+        }
         public (DateTime, byte) RealKiller;
         public PlainShipRoom LastRoom;
         public Dictionary<byte, string> TargetColorData;
@@ -25,7 +35,7 @@ namespace TownOfHost
         {
             MainRole = CustomRoles.NotAssigned;
             SubRoles = new();
-            countTypes = CountTypes.OutOfGame;
+            CountType = CountTypes.OutOfGame;
             PlayerId = playerId;
             IsDead = false;
             DeathReason = CustomDeathReason.etc;
@@ -55,17 +65,16 @@ namespace TownOfHost
         {
             MainRole = role;
 
-            // 役職クラスのコンストラクタでセット済なら不要
-            if (CustomRoleManager.GetByPlayerId(PlayerId) == null)
-            {
-                countTypes = role switch
+            CountType = CustomRoleManager.GetRoleInfo(role) is SimpleRoleInfo roleInfo ?
+                roleInfo.CountType :
+                role switch
                 {
                     CustomRoles.GM => CountTypes.OutOfGame,
                     CustomRoles.HASFox or
                     CustomRoles.HASTroll => CountTypes.None,
+                    CustomRoles.TaskPlayerB => CountTypes.TaskPlayer,
                     _ => role.IsImpostor() ? CountTypes.Impostor : CountTypes.Crew,
                 };
-            }
         }
         public void SetSubRole(CustomRoles role, bool AllReplace = false)
         {
@@ -110,6 +119,7 @@ namespace TownOfHost
                     count++;
             return count;
         }
+        public void SetCountType(CountTypes countType) => CountType = countType;
 
         private static Dictionary<byte, PlayerState> allPlayerStates = new(15);
         public static IReadOnlyDictionary<byte, PlayerState> AllPlayerStates => allPlayerStates;
@@ -176,6 +186,7 @@ namespace TownOfHost
             CompletedTasksCount = Math.Min(AllTasksCount, CompletedTasksCount);
             Logger.Info($"{player.GetNameWithRole()}: TaskCounts = {CompletedTasksCount}/{AllTasksCount}", "TaskState.Update");
         }
+        public bool HasCompletedEnoughCountOfTasks(int count) => IsTaskFinished || CompletedTasksCount >= count;
     }
     public class PlayerVersion
     {

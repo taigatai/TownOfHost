@@ -2,7 +2,7 @@ using System;
 using AmongUs.GameOptions;
 using Hazel;
 using InnerNet;
-using UnhollowerBaseLib;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 
 namespace TownOfHost
 {
@@ -263,6 +263,7 @@ namespace TownOfHost
         {
             sender.AutoStartRpc(player.NetId, (byte)RpcCalls.MurderPlayer, targetClientId)
                 .WriteNetObject(target)
+                .Write((int)ExtendedPlayerControl.SuccessFlags)
                 .EndRpc();
         }
     }

@@ -12,7 +12,7 @@ namespace TownOfHost
 {
     public static class TemplateManager
     {
-        private static readonly string TEMPLATE_FILE_PATH = "./TOH_DATA/template.txt";
+        private static readonly string TEMPLATE_FILE_PATH = "./TOHK_DATA/template.txt";
         private static Dictionary<string, Func<string>> _replaceDictionary = new()
         {
             ["RoomCode"] = () => InnerNet.GameCode.IntToGameName(AmongUsClient.Instance.GameId),
@@ -32,7 +32,8 @@ namespace TownOfHost
             ["NumLongTasks"] = () => Main.NormalOptions.NumLongTasks.ToString(),
             ["NumShortTasks"] = () => Main.NormalOptions.NumShortTasks.ToString(),
             ["Date"] = () => DateTime.Now.ToShortDateString(),
-            ["Time"] = () => DateTime.Now.ToShortTimeString(),
+            ["Roles"] = () => Utils.GetActiveRoleText(),
+            ["Timer"] = () => Utils.GetTimer(),
         };
 
         public static void Init()
@@ -46,7 +47,7 @@ namespace TownOfHost
             {
                 try
                 {
-                    if (!Directory.Exists(@"TOH_DATA")) Directory.CreateDirectory(@"TOH_DATA");
+                    if (!Directory.Exists(@"TOHK_DATA")) Directory.CreateDirectory(@"TOHK_DATA");
                     if (File.Exists(@"./template.txt"))
                     {
                         File.Move(@"./template.txt", TEMPLATE_FILE_PATH);
@@ -69,7 +70,7 @@ namespace TownOfHost
             CreateIfNotExists();
             using StreamReader sr = new(TEMPLATE_FILE_PATH, Encoding.GetEncoding("UTF-8"));
             string text;
-            string[] tmp = { };
+            string[] tmp = Array.Empty<string>();
             List<string> sendList = new();
             HashSet<string> tags = new();
             while ((text = sr.ReadLine()) != null)

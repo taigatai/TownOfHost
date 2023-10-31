@@ -30,7 +30,22 @@ namespace TownOfHost
         SetCurrentDousingTarget,
         SetEvilTrackerTarget,
         SetRealKiller,
-        SyncPuppet
+        SyncPuppet,
+        SetSchrodingerCatTeam,
+        StealthDarken,
+        EvilHackerCreateMurderNotify,
+        PenguinSync,
+        MareSync,
+        SyncPlagueDoctor,
+        KillerCount,
+        SyncRoomTimer,
+        SyncYomiage,
+        SetFTc,
+        SetFTtarget,
+        SetAntiRc,
+        SetBbc,
+        SetTKc,
+        SetChefTarget
     }
     public enum Sounds
     {
@@ -43,6 +58,7 @@ namespace TownOfHost
         public static bool Prefix(PlayerControl __instance, [HarmonyArgument(0)] byte callId, [HarmonyArgument(1)] MessageReader reader)
         {
             var rpcType = (RpcCalls)callId;
+            Logger.Info(callId + rpcType + "RPCを受け取りました！", "RPC");
             Logger.Info($"{__instance?.Data?.PlayerId}({__instance?.Data?.PlayerName}):{callId}({RPC.GetRpcName(callId)})", "ReceiveRPC");
             MessageReader subReader = MessageReader.Get(reader);
             switch (rpcType)
@@ -83,6 +99,7 @@ namespace TownOfHost
         }
         public static void Postfix(PlayerControl __instance, [HarmonyArgument(0)] byte callId, [HarmonyArgument(1)] MessageReader reader)
         {
+            Logger.Info(callId + (RpcCalls)callId + "RPCを受け取りました！", "RPC");
             //CustomRPC以外は処理しない
             if (callId < (byte)CustomRPC.VersionCheck) return;
 
@@ -100,7 +117,7 @@ namespace TownOfHost
                     catch
                     {
                         Logger.Warn($"{__instance?.Data?.PlayerName}({__instance.PlayerId}): バージョン情報が無効です", "RpcVersionCheck");
-                        new LateTask(() =>
+                        _ = new LateTask(() =>
                         {
                             MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(PlayerControl.LocalPlayer.NetId, (byte)CustomRPC.RequestRetryVersionCheck, SendOption.Reliable, __instance.GetClientId());
                             AmongUsClient.Instance.FinishRpcImmediately(writer);
@@ -147,6 +164,21 @@ namespace TownOfHost
                     byte killerId = reader.ReadByte();
                     RPC.SetRealKiller(targetId, killerId);
                     break;
+                case CustomRPC.SyncRoomTimer:
+                    float timer = 0;
+                    if (float.TryParse(reader.ReadString(), out timer))
+                        GameStartManagerPatch.SetTimer(timer - 0.5f);
+                    else GameStartManagerPatch.SetTimer(0);
+                    Logger.Info($"{timer - 0.5f}", "settimer");
+                    break;
+                case CustomRPC.SyncYomiage:
+                    if (Main.SyncYomiage.Value)
+                    {
+                        ChatCommands.YomiageS.Clear();
+                        foreach (var pc in Main.AllPlayerControls)
+                            ChatCommands.YomiageS[reader.ReadInt32()] = reader.ReadString();
+                    }
+                    break;
                 default:
                     CustomRoleManager.DispatchRpc(reader, rpcType);
                     break;
@@ -192,11 +224,27 @@ namespace TownOfHost
             writer.EndMessage();
             Main.playerVersion[PlayerControl.LocalPlayer.PlayerId] = new PlayerVersion(Main.PluginVersion, $"{ThisAssembly.Git.Commit}({ThisAssembly.Git.Branch})", Main.ForkId);
         }
+        public static void RpcSyncRoomTimer()
+        {
+            MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(PlayerControl.LocalPlayer.NetId, (byte)CustomRPC.SyncRoomTimer, Hazel.SendOption.Reliable, -1);
+            writer.Write($"{GameStartManagerPatch.GetTimer()}");
+            AmongUsClient.Instance.FinishRpcImmediately(writer);
+        }
         public static void SendDeathReason(byte playerId, CustomDeathReason deathReason)
         {
             MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(PlayerControl.LocalPlayer.NetId, (byte)CustomRPC.SetDeathReason, Hazel.SendOption.Reliable, -1);
             writer.Write(playerId);
             writer.Write((int)deathReason);
+            AmongUsClient.Instance.FinishRpcImmediately(writer);
+        }
+        public static void SyncYomiage()
+        {
+            MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(PlayerControl.LocalPlayer.NetId, (byte)CustomRPC.SyncYomiage, Hazel.SendOption.Reliable, -1);
+            foreach (var data in ChatCommands.YomiageS)
+            {
+                writer.Write(data.Key);
+                writer.Write(data.Value);
+            }
             AmongUsClient.Instance.FinishRpcImmediately(writer);
         }
         public static void GetDeathReason(MessageReader reader)
