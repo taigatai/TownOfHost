@@ -6,7 +6,7 @@ namespace TownOfHost.Roles.Crewmate;
 public sealed class Bait : RoleBase
 {
     public static readonly SimpleRoleInfo RoleInfo =
-        new(
+        SimpleRoleInfo.Create(
             typeof(Bait),
             player => new Bait(player),
             CustomRoles.Bait,
@@ -27,6 +27,6 @@ public sealed class Bait : RoleBase
     {
         var (killer, target) = info.AttemptTuple;
         if (target.Is(CustomRoles.Bait) && !info.IsSuicide)
-            new LateTask(() => killer.CmdReportDeadBody(target.Data), 0.15f, "Bait Self Report");
+            _ = new LateTask(() => killer.CmdReportDeadBody(target.Data), 0.15f, "Bait Self Report");
     }
 }

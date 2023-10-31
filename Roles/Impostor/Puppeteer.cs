@@ -12,7 +12,7 @@ namespace TownOfHost.Roles.Impostor;
 public sealed class Puppeteer : RoleBase, IImpostor
 {
     public static readonly SimpleRoleInfo RoleInfo =
-        new(
+        SimpleRoleInfo.Create(
             typeof(Puppeteer),
             player => new Puppeteer(player),
             CustomRoles.Puppeteer,
@@ -77,12 +77,10 @@ public sealed class Puppeteer : RoleBase, IImpostor
         Utils.NotifyRoles(SpecifySeer: puppeteer);
         info.DoKill = false;
     }
-    public override bool OnReportDeadBody(PlayerControl _, GameData.PlayerInfo __)
+    public override void OnReportDeadBody(PlayerControl _, GameData.PlayerInfo __)
     {
         Puppets.Clear();
         SendRPC(byte.MaxValue, 0);
-
-        return true;
     }
     public static void OnFixedUpdateOthers(PlayerControl puppet)
     {
@@ -119,7 +117,7 @@ public sealed class Puppeteer : RoleBase, IImpostor
             {
                 RPC.PlaySoundRPC(Player.PlayerId, Sounds.KillSound);
                 target.SetRealKiller(Player);
-                puppet.RpcMurderPlayer(target);
+                puppet.RpcMurderPlayer(target, true);
                 Utils.MarkEveryoneDirtySettings();
                 Puppets.Remove(puppet.PlayerId);
                 SendRPC(puppet.PlayerId, 2);

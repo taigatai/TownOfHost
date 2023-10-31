@@ -21,7 +21,7 @@ public sealed class FireWorks : RoleBase, IImpostor
         CanUseKill = Initial | FireEnd
     }
     public static readonly SimpleRoleInfo RoleInfo =
-        new(
+        SimpleRoleInfo.Create(
             typeof(FireWorks),
             player => new FireWorks(player),
             CustomRoles.FireWorks,
@@ -119,7 +119,7 @@ public sealed class FireWorks : RoleBase, IImpostor
                             {
                                 PlayerState.GetByPlayerId(fireTarget.PlayerId).DeathReason = CustomDeathReason.Bombed;
                                 fireTarget.SetRealKiller(Player);
-                                fireTarget.RpcMurderPlayer(fireTarget);
+                                fireTarget.RpcMurderPlayer(fireTarget, true);
                             }
                         }
                     }
@@ -130,7 +130,7 @@ public sealed class FireWorks : RoleBase, IImpostor
                         if (totalAlive != 1)
                         {
                             MyState.DeathReason = CustomDeathReason.Misfire;
-                            Player.RpcMurderPlayer(Player);
+                            Player.RpcMurderPlayer(Player, true);
                         }
                     }
                     Player.MarkDirtySettings();

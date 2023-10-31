@@ -8,7 +8,7 @@ namespace TownOfHost.Roles.Neutral;
 public sealed class Terrorist : RoleBase
 {
     public static readonly SimpleRoleInfo RoleInfo =
-        new(
+        SimpleRoleInfo.Create(
             typeof(Terrorist),
             player => new Terrorist(player),
             CustomRoles.Terrorist,
@@ -88,7 +88,7 @@ public sealed class Terrorist : RoleBase
                 continue;
             }
             otherPlayer.SetRealKiller(Player);
-            otherPlayer.RpcMurderPlayer(otherPlayer);
+            otherPlayer.RpcMurderPlayer(otherPlayer, true);
             var playerState = PlayerState.GetByPlayerId(otherPlayer.PlayerId);
             playerState.DeathReason = CustomDeathReason.Bombed;
             playerState.SetDead();

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Hazel;
@@ -36,15 +35,10 @@ public abstract class RoleBase : IDisposable
     /// アビリティボタンで発動する能力を持っているか
     /// </summary>
     public bool HasAbility { get; private set; }
-    /// <summary>
-    /// どの陣営にカウントされるか
-    /// </summary>
-    public CountTypes CountType => MyState.countTypes;
     public RoleBase(
         SimpleRoleInfo roleInfo,
         PlayerControl player,
         Func<HasTask> hasTasks = null,
-        CountTypes? countType = null,
         bool? hasAbility = null
     )
     {
@@ -61,16 +55,16 @@ public abstract class RoleBase : IDisposable
         MyState = PlayerState.GetByPlayerId(player.PlayerId);
         MyTaskState = MyState.GetTaskState();
 
-        MyState.countTypes = countType ?? (roleInfo.RoleName.IsImpostor() ? CountTypes.Impostor : CountTypes.Crew);
-
         CustomRoleManager.AllActiveRoles.Add(Player.PlayerId, this);
     }
+#pragma warning disable CA1816
     public void Dispose()
     {
         OnDestroy();
         CustomRoleManager.AllActiveRoles.Remove(Player.PlayerId);
         Player = null;
     }
+#pragma warning restore CA1816
     public bool Is(PlayerControl player)
     {
         return player.PlayerId == Player.PlayerId;
@@ -169,13 +163,13 @@ public abstract class RoleBase : IDisposable
     { }
 
     /// <summary>
-    /// 通報時に呼ばれる関数
+    /// 通報時，会議が呼ばれることが確定してから呼ばれる関数<br/>
     /// 通報に関係ないプレイヤーも呼ばれる
     /// </summary>
     /// <param name="reporter">通報したプレイヤー</param>
     /// <param name="target">通報されたプレイヤー</param>
-    /// <returns>falseを返すと通報がキャンセルされます</returns>
-    public virtual bool OnReportDeadBody(PlayerControl reporter, GameData.PlayerInfo target) => true;
+    public virtual void OnReportDeadBody(PlayerControl reporter, GameData.PlayerInfo target)
+    { }
 
     /// <summary>
     /// <para>ベントに入ったときに呼ばれる関数</para>
@@ -193,12 +187,23 @@ public abstract class RoleBase : IDisposable
     { }
 
     /// <summary>
-    /// プレイヤーが投票した瞬間に呼ばれる関数
+    /// 自分が投票した瞬間，票がカウントされる前に呼ばれる<br/>
+    /// falseを返すと投票行動自体をなかったことにし，再度投票できるようになる<br/>
+    /// 投票行動自体は取り消さず，票だけカウントさせない場合は<see cref="ModifyVote"/>を使用し，doVoteをfalseにする
     /// </summary>
-    /// <param name="statesList">投票情報を保存しておくリスト</param>
-    /// <param name="pva">プレイヤー</param>
-    /// <returns>falseを返すと会議を強制終了する</returns>
-    public virtual bool OnCheckForEndVoting(ref List<MeetingHud.VoterState> statesList, PlayerVoteArea pva) => true;
+    /// <param name="votedForId">投票先</param>
+    /// <param name="voter">投票した人</param>
+    /// <returns>falseを返すと投票自体がなかったことになり，投票者自身以外には投票したことがバレません</returns>
+    public virtual bool CheckVoteAsVoter(byte votedForId, PlayerControl voter) => true;
+
+    /// <summary>
+    /// 誰かが投票した瞬間に呼ばれ，票を書き換えることができる<br/>
+    /// 投票行動自体をなかったことにしたい場合は<see cref="CheckVoteAsVoter"/>を使用する
+    /// </summary>
+    /// <param name="voterId">投票した人のID</param>
+    /// <param name="sourceVotedForId">投票された人のID</param>
+    /// <returns>(変更後の投票先(変更しないならnull), 変更後の票数(変更しないならnull), 投票をカウントするか)</returns>
+    public virtual (byte? votedForId, int? numVotes, bool doVote) ModifyVote(byte voterId, byte sourceVotedForId, bool isIntentional) => (null, null, true);
 
     /// <summary>
     /// 追放後に行われる処理
@@ -227,7 +232,7 @@ public abstract class RoleBase : IDisposable
     /// </summary>
     /// <param name="systemType">サボタージュの種類</param>
     /// <returns>falseでサボタージュをキャンセル</returns>
-    public virtual bool CanSabotage(SystemTypes systemType) => true;
+    public virtual bool OnInvokeSabotage(SystemTypes systemType) => true;
 
     /// <summary>
     /// 誰かがサボタージュが発生させたときに呼ばれる
@@ -251,22 +256,29 @@ public abstract class RoleBase : IDisposable
     // Suffix:ターゲット矢印などの追加情報。
 
     /// <summary>
-    /// seenによるRoleNameの書き換え
+    /// seenによる表示上のRoleNameの書き換え
     /// </summary>
     /// <param name="seer">見る側</param>
     /// <param name="enabled">RoleNameを表示するかどうか</param>
     /// <param name="roleColor">RoleNameの色</param>
     /// <param name="roleText">RoleNameのテキスト</param>
-    public virtual void OverrideRoleNameAsSeen(PlayerControl seer, ref bool enabled, ref Color roleColor, ref string roleText)
+    public virtual void OverrideDisplayRoleNameAsSeen(PlayerControl seer, ref bool enabled, ref Color roleColor, ref string roleText)
     { }
     /// <summary>
-    /// seerによるRoleNameの書き換え
+    /// seerによる表示上のRoleNameの書き換え
     /// </summary>
     /// <param name="seen">見られる側</param>
     /// <param name="enabled">RoleNameを表示するかどうか</param>
     /// <param name="roleColor">RoleNameの色</param>
     /// <param name="roleText">RoleNameのテキスト</param>
-    public virtual void OverrideRoleNameAsSeer(PlayerControl seen, ref bool enabled, ref Color roleColor, ref string roleText)
+    public virtual void OverrideDisplayRoleNameAsSeer(PlayerControl seen, ref bool enabled, ref Color roleColor, ref string roleText)
+    { }
+    /// <summary>
+    /// 本来の役職名の書き換え
+    /// </summary>
+    /// <param name="roleColor">RoleNameの色</param>
+    /// <param name="roleText">RoleNameのテキスト</param>
+    public virtual void OverrideTrueRoleName(ref Color roleColor, ref string roleText)
     { }
     /// <summary>
     /// seerによるProgressTextの書き換え
@@ -329,6 +341,30 @@ public abstract class RoleBase : IDisposable
         };
         return str.HasValue ? GetString(str.Value) : "Invalid";
     }
+
+    /// <summary>
+    /// ホストからチャットが送られてきた時の情報 TOHk
+    /// </summary>
+    public virtual void Chat(ChatController __instance)
+    { }
+    /// <summary>
+    /// 参加側からチャットが送られてきた時の情報 TOHk
+    /// </summary>
+    public virtual void Chat2(PlayerControl player, string text)
+    { }
+    public virtual bool Pet(PlayerControl __instance) => false;
+    /// <summary>
+    /// 投票が終わったあとの票変更 TOHk
+    /// </summary>
+    public virtual void ChangeVote()
+    { }
+
+    /// <summary>
+    /// 会議をキャンセルするために使う<br/>
+    /// <see cref="OnReportDeadBody"/>より先に呼ばれる、キャンセルした場合は呼ばれない<br/>
+    /// trueを返すとキャンセルされる
+    /// </summary>
+    public virtual bool CancelReportDeadBody(PlayerControl reporter, GameData.PlayerInfo target) => false;
 
     protected static AudioClip GetIntroSound(RoleTypes roleType) =>
         RoleManager.Instance.AllRoles.Where((role) => role.Role == roleType).FirstOrDefault().IntroSound;

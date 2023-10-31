@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using AmongUs.GameOptions;
 
 using TownOfHost.Roles.Core;
@@ -7,7 +6,7 @@ namespace TownOfHost.Roles.Crewmate;
 public sealed class Mayor : RoleBase
 {
     public static readonly SimpleRoleInfo RoleInfo =
-        new(
+        SimpleRoleInfo.Create(
             typeof(Mayor),
             player => new Mayor(player),
             CustomRoles.Mayor,
@@ -56,19 +55,16 @@ public sealed class Mayor : RoleBase
     }
     public override void ApplyGameOptions(IGameOptions opt)
     {
-        Logger.Warn($"{LeftButtonCount} <= 0", "Mayor.ApplyGameOptions");
         AURoleOptions.EngineerCooldown =
             LeftButtonCount <= 0
             ? 255f
             : opt.GetInt(Int32OptionNames.EmergencyCooldown);
         AURoleOptions.EngineerInVentMaxTime = 1;
     }
-    public override bool OnReportDeadBody(PlayerControl reporter, GameData.PlayerInfo target)
+    public override void OnReportDeadBody(PlayerControl reporter, GameData.PlayerInfo target)
     {
-        if (reporter.Is(CustomRoles.Mayor) && target == null) //ボタン
+        if (reporter && target == null) //ボタン
             LeftButtonCount--;
-
-        return true;
     }
     public override bool OnEnterVent(PlayerPhysics physics, int ventId)
     {
@@ -81,17 +77,15 @@ public sealed class Mayor : RoleBase
 
         return false;
     }
-    public override bool OnCheckForEndVoting(ref List<MeetingHud.VoterState> statesList, PlayerVoteArea pva)
+    public override (byte? votedForId, int? numVotes, bool doVote) ModifyVote(byte voterId, byte sourceVotedForId, bool isIntentional)
     {
-        for (var i = 0; i < AdditionalVote; i++)
+        // 既定値
+        var (votedForId, numVotes, doVote) = base.ModifyVote(voterId, sourceVotedForId, isIntentional);
+        if (voterId == Player.PlayerId)
         {
-            statesList.Add(new MeetingHud.VoterState()
-            {
-                VoterId = pva.TargetPlayerId,
-                VotedForId = pva.VotedFor
-            });
+            numVotes = AdditionalVote + 1;
         }
-        return true;
+        return (votedForId, numVotes, doVote);
     }
     public override void AfterMeetingTasks()
     {

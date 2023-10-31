@@ -48,7 +48,11 @@ public static class CustomRoleManager
         appearanceKiller.ResetKillCooldown();
 
         // 無効なキルをブロックする処理 必ず最初に実行する
-        if (!CheckMurderPatch.CheckForInvalidMurdering(info)) return;
+        if (!CheckMurderPatch.CheckForInvalidMurdering(info))
+        {
+            appearanceKiller.RpcMurderPlayer(appearanceTarget, false);
+            return;
+        }
 
         var killerRole = attemptKiller.GetRoleClass();
         var targetRole = attemptTarget.GetRoleClass();
@@ -61,7 +65,11 @@ public static class CustomRoleManager
                 // ターゲットのキルチェック処理実行
                 if (targetRole != null)
                 {
-                    if (!targetRole.OnCheckMurderAsTarget(info)) return;
+                    if (!targetRole.OnCheckMurderAsTarget(info))
+                    {
+                        appearanceKiller.RpcMurderPlayer(appearanceTarget, false);
+                        return;
+                    }
                 }
             }
             // キラーのキルチェック処理実行
@@ -73,12 +81,13 @@ public static class CustomRoleManager
         {
             //MurderPlayer用にinfoを保存
             CheckMurderInfos[appearanceKiller.PlayerId] = info;
-            appearanceKiller.RpcMurderPlayer(appearanceTarget);
+            appearanceKiller.RpcMurderPlayer(appearanceTarget, true);
         }
         else
         {
             if (!info.CanKill) Logger.Info($"{appearanceTarget.GetNameWithRole()}をキル出来ない。", "CheckMurder");
             if (!info.DoKill) Logger.Info($"{appearanceKiller.GetNameWithRole()}はキルしない。", "CheckMurder");
+            appearanceKiller.RpcMurderPlayer(appearanceTarget, false);
         }
     }
     /// <summary>
@@ -192,6 +201,8 @@ public static class CustomRoleManager
         CheckMurderInfos.Clear();
         OnMurderPlayerOthers.Clear();
         OnFixedUpdateOthers.Clear();
+        SchrodingerPatch.SResetPlayer();
+        PlayerSkinPatch.RemoveAll();
     }
     public static void CreateInstance()
     {
@@ -210,8 +221,10 @@ public static class CustomRoleManager
         {
             OtherRolesAdd(player);
         }
-        if (player.Data.Role.Role == RoleTypes.Shapeshifter) Main.CheckShapeshift.Add(player.PlayerId, false);
-
+        if (player.Data.Role.Role == RoleTypes.Shapeshifter)
+        {
+            Main.CheckShapeshift.TryAdd(player.PlayerId, false);
+        }
     }
     public static void OtherRolesAdd(PlayerControl pc)
     {
@@ -369,15 +382,25 @@ public enum CustomRoles
     Witch,
     Warlock,
     Mare,
+    Penguin,
     Puppeteer,
     TimeThief,
     EvilTracker,
+    Stealth,
+    NekoKabocha,
+    EvilHacker,
+    Insider,
+    //TOH-k
+    Bomber,
+    TeleportKiller,
+    AntiReporter,
     //Madmate
     MadGuardian,
     Madmate,
     MadSnitch,
     SKMadmate,
-    MSchrodingerCat,//インポスター陣営のシュレディンガーの猫
+    //TOH-k
+    MadJester,
     //Crewmate(Vanilla)
     Engineer,
     GuardianAngel,
@@ -395,23 +418,34 @@ public enum CustomRoles
     Doctor,
     Seer,
     TimeManager,
-    CSchrodingerCat,//クルー陣営のシュレディンガーの猫
+    //TOH-K
+    VentMaster,
+    ToiletFan,
+    Bakery,
+    FortuneTeller,
+    Balancer,
     //Neutral
     Arsonist,
     Egoist,
-    EgoSchrodingerCat,//エゴイスト陣営のシュレディンガーの猫
     Jester,
     Opportunist,
-    SchrodingerCat,//無所属のシュレディンガーの猫
+    PlagueDoctor,
+    SchrodingerCat,
     Terrorist,
     Executioner,
     Jackal,
-    JSchrodingerCat,//ジャッカル陣営のシュレディンガーの猫
+    //TOHk
+    Remotekiller,
+    Chef,
+    JackalMafia,
+    CountKiller,
+    TaskPlayerB,
     //HideAndSeek
     HASFox,
     HASTroll,
     //GM
     GM,
+    Debugger,
     // Sub-roll after 500
     NotAssigned = 500,
     LastImpostor,

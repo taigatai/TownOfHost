@@ -9,7 +9,7 @@ namespace TownOfHost.Roles.Crewmate;
 public sealed class SpeedBooster : RoleBase
 {
     public static readonly SimpleRoleInfo RoleInfo =
-        new(
+        SimpleRoleInfo.Create(
             typeof(SpeedBooster),
             player => new SpeedBooster(player),
             CustomRoles.SpeedBooster,
@@ -55,7 +55,7 @@ public sealed class SpeedBooster : RoleBase
     {
         var playerId = Player.PlayerId;
         if (Player.IsAlive()
-            && BoostTarget == byte.MaxValue
+            && MyTaskState.HasCompletedEnoughCountOfTasks(TaskTrigger)
             && (IsTaskFinished || MyTaskState.CompletedTasksCount >= TaskTrigger))
         {   //ｽﾋﾟﾌﾞが生きていて、SpeedBoostTargetに登録済みでなく、全タスク完了orトリガー数までタスクを完了している場合
             var rand = IRandom.Instance;

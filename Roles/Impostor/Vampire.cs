@@ -12,7 +12,7 @@ namespace TownOfHost.Roles.Impostor
     public sealed class Vampire : RoleBase, IImpostor
     {
         public static readonly SimpleRoleInfo RoleInfo =
-            new(
+            SimpleRoleInfo.Create(
                 typeof(Vampire),
                 player => new Vampire(player),
                 CustomRoles.Vampire,
@@ -84,7 +84,7 @@ namespace TownOfHost.Roles.Impostor
                 }
             }
         }
-        public override bool OnReportDeadBody(PlayerControl _, GameData.PlayerInfo __)
+        public override void OnReportDeadBody(PlayerControl _, GameData.PlayerInfo __)
         {
             foreach (var targetId in BittenPlayers.Keys)
             {
@@ -92,8 +92,6 @@ namespace TownOfHost.Roles.Impostor
                 KillBitten(target, true);
             }
             BittenPlayers.Clear();
-
-            return true;
         }
         public bool OverrideKillButtonText(out string text)
         {

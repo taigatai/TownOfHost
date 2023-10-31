@@ -12,7 +12,7 @@ namespace TownOfHost.Roles.Impostor;
 public sealed class Sniper : RoleBase, IImpostor
 {
     public static readonly SimpleRoleInfo RoleInfo =
-        new(
+        SimpleRoleInfo.Create(
             typeof(Sniper),
             player => new Sniper(player),
             CustomRoles.Sniper,
@@ -68,7 +68,7 @@ public sealed class Sniper : RoleBase, IImpostor
     bool MeetingReset;
     public static void SetupOptionItem()
     {
-        SniperBulletCount = IntegerOptionItem.Create(RoleInfo, 10, OptionName.SniperBulletCount, new(1, 5, 1), 2, false)
+        SniperBulletCount = IntegerOptionItem.Create(RoleInfo, 10, OptionName.SniperBulletCount, new(1, 99, 1), 2, false)
             .SetValueFormat(OptionFormat.Pieces);
         SniperPrecisionShooting = BooleanOptionItem.Create(RoleInfo, 11, OptionName.SniperPrecisionShooting, false, false);
         SniperAimAssist = BooleanOptionItem.Create(RoleInfo, 12, OptionName.SniperAimAssist, false, false);
@@ -94,7 +94,7 @@ public sealed class Sniper : RoleBase, IImpostor
         using var sender = CreateSender(CustomRPC.SniperSync);
 
         var snList = ShotNotify;
-        sender.Writer.Write(snList.Count());
+        sender.Writer.Write(snList.Count);
         foreach (var sn in snList)
         {
             sender.Writer.Write(sn);
@@ -247,21 +247,18 @@ public sealed class Sniper : RoleBase, IImpostor
                 Utils.NotifyRoles(SpecifySeer: otherPc);
             }
             SendRPC();
-            new LateTask(
-                () =>
+            _ = new LateTask(() =>
+            {
+                snList.Clear();
+                if (targets.Count != 0)
                 {
-                    snList.Clear();
-                    if (targets.Count != 0)
+                    foreach (var otherPc in targets.Keys)
                     {
-                        foreach (var otherPc in targets.Keys)
-                        {
-                            Utils.NotifyRoles(SpecifySeer: otherPc);
-                        }
-                        SendRPC();
+                        Utils.NotifyRoles(SpecifySeer: otherPc);
                     }
-                },
-                0.5f, "Sniper shot Notify"
-                );
+                    SendRPC();
+                }
+            }, 0.5f, "Sniper shot Notify");
         }
     }
     public override void OnFixedUpdate(PlayerControl player)
@@ -292,10 +289,9 @@ public sealed class Sniper : RoleBase, IImpostor
             Utils.NotifyRoles(SpecifySeer: Player);
         }
     }
-    public override bool OnReportDeadBody(PlayerControl reporter, GameData.PlayerInfo target)
+    public override void OnReportDeadBody(PlayerControl reporter, GameData.PlayerInfo target)
     {
         MeetingReset = true;
-        return true;
     }
     public override string GetProgressText(bool comms = false)
     {
@@ -326,7 +322,7 @@ public sealed class Sniper : RoleBase, IImpostor
         {
             //射撃音が聞こえるプレイヤー
             var snList = sniper.ShotNotify;
-            if (snList.Count() > 0 && snList.Contains(seer.PlayerId))
+            if (snList.Count > 0 && snList.Contains(seer.PlayerId))
             {
                 return $"<size=200%>{Utils.ColorString(Palette.ImpostorRed, "!")}</size>";
             }

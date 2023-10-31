@@ -5,10 +5,10 @@ using TownOfHost.Roles.Core.Interfaces;
 
 namespace TownOfHost.Roles.Neutral
 {
-    public sealed class Jackal : RoleBase, IKiller
+    public sealed class Jackal : RoleBase, IKiller, ISchrodingerCatOwner
     {
         public static readonly SimpleRoleInfo RoleInfo =
-            new(
+            SimpleRoleInfo.Create(
                 typeof(Jackal),
                 player => new Jackal(player),
                 CustomRoles.Jackal,
@@ -17,14 +17,16 @@ namespace TownOfHost.Roles.Neutral
                 50900,
                 SetupOptionItem,
                 "jac",
-                "#00b4eb"
+                "#00b4eb",
+                true,
+                countType: CountTypes.Jackal,
+                assignCountRule: new(1, 1, 1)
             );
         public Jackal(PlayerControl player)
         : base(
             RoleInfo,
             player,
-            () => HasTask.False,
-            CountTypes.Jackal
+            () => HasTask.False
         )
         {
             KillCooldown = OptionKillCooldown.GetFloat();
@@ -41,6 +43,7 @@ namespace TownOfHost.Roles.Neutral
         public static bool CanVent;
         public static bool CanUseSabotage;
         private static bool HasImpostorVision;
+        public SchrodingerCat.TeamType SchrodingerCatChangeTo => SchrodingerCat.TeamType.Jackal;
         private static void SetupOptionItem()
         {
             OptionKillCooldown = FloatOptionItem.Create(RoleInfo, 10, GeneralOption.KillCooldown, new(2.5f, 180f, 2.5f), 30f, false)
@@ -55,6 +58,23 @@ namespace TownOfHost.Roles.Neutral
         {
             __instance.SabotageButton.ToggleVisible(isActive && CanUseSabotage);
         }
-        public override bool CanSabotage(SystemTypes systemType) => CanUseSabotage;
+        public override bool OnInvokeSabotage(SystemTypes systemType) => CanUseSabotage;
+        public void ApplySchrodingerCatOptions(IGameOptions option) => ApplyGameOptions(option);
+        public void OnCheckMurderAsKiller(MurderInfo info)
+        {
+            var (killer, target) = info.AttemptTuple;
+            if (target.Is(CustomRoles.JackalMafia) || !info.CanKill) info.DoKill = false;
+            else info.DoKill = true;
+        }
+        public override string GetMark(PlayerControl seer, PlayerControl seen, bool isForMeeting = false)
+        {
+            //seenが省略の場合seer
+            seen ??= seer;
+            if (seen.Is(CustomRoles.JackalMafia))
+            {
+                return Utils.ColorString(RoleInfo.RoleColor, "★");
+            }
+            else return "";
+        }
     }
 }
