@@ -41,7 +41,7 @@ namespace TownOfHost
     {
         public static void Postfix(MMOnlineManager __instance)
         {
-            if (!(ModUpdater.hasUpdate || ModUpdater.isBroken || !VersionChecker.IsSupported)) return;
+            if (!(ModUpdater.hasUpdate || ModUpdater.isBroken || !VersionChecker.IsSupported || !ModUpdater.publicok || !Main.IsPublicAvailableOnThisVersion)) return;
             var obj = GameObject.Find("FindGameButton");
             if (obj)
             {
