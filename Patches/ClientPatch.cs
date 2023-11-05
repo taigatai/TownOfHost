@@ -22,9 +22,10 @@ namespace TownOfHost
                 Logger.SendInGame(message);
                 return false;
             }
-            if (ModUpdater.isBroken || ModUpdater.hasUpdate || !VersionChecker.IsSupported)
+            if (ModUpdater.isBroken || ModUpdater.hasUpdate || !VersionChecker.IsSupported || !Main.IsPublicAvailableOnThisVersion)
             {
                 var message = "";
+                if (!Main.IsPublicAvailableOnThisVersion) message = GetString("PublicNotAvailableOnThisVersion");
                 if (!VersionChecker.IsSupported) message = GetString("UnsupportedVersion");
                 if (ModUpdater.isBroken) message = GetString("ModBrokenMessage");
                 if (ModUpdater.hasUpdate) message = GetString("CanNotJoinPublicRoomNoLatest");
@@ -62,6 +63,10 @@ namespace TownOfHost
                 else if (!VersionChecker.IsSupported)
                 {
                     message = GetString("UnsupportedVersion");
+                }
+                else if (!Main.IsPublicAvailableOnThisVersion)
+                {
+                    message = GetString("PublicNotAvailableOnThisVersion");
                 }
                 textObj.text = $"<size=2>{Utils.ColorString(Color.red, message)}</size>";
             }

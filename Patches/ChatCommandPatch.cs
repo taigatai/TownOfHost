@@ -12,6 +12,7 @@ using InnerNet;
 
 using TownOfHost.Roles.Core;
 using static TownOfHost.Translator;
+using TownOfHost.Modules;
 
 namespace TownOfHost
 {
@@ -164,7 +165,6 @@ namespace TownOfHost
                                 cancelVal = "/dis";
                                 break;
                         }
-                        ShipStatus.Instance.RpcUpdateSystem(SystemTypes.Admin, 0);
                         break;
 
                     case "/h":
@@ -381,9 +381,6 @@ namespace TownOfHost
                                 case "noimp":
                                     Main.NormalOptions.NumImpostors = 0;
                                     break;
-                                case "webh":
-                                    Webhook.Send("動作テスト by KYMario");
-                                    break;
                                 case "setimp":
                                     int d = 0;
                                     subArgs = subArgs.Length < 2 ? "0" : args[2];
@@ -496,12 +493,16 @@ namespace TownOfHost
             }
         }
 
-        public static string roleA = "N";
+        public static string LastL = "N";
         public static void GetRolesInfo(string role, byte player = 0)
         {
+
             // 初回のみ処理
-            if (roleCommands == null || (roleA == "K" && Main.ChangeSomeLanguage.Value) || (!Main.ChangeSomeLanguage.Value && roleA == "T"))
+            if (roleCommands == null
+                || (Main.ChangeSomeLanguage.Value && LastL != $"{TranslationController.Instance.currentLanguage.languageID}")
+                || (LastL != "N" && !Main.ChangeSomeLanguage.Value))
             {
+                Logger.SendInGame("!!");
 #pragma warning disable IDE0028  // Dictionary初期化の簡素化をしない
                 roleCommands = new Dictionary<CustomRoles, string>();
 
@@ -535,7 +536,7 @@ namespace TownOfHost
                 roleCommands.Add((CustomRoles)(-6), $"== {GetString("HideAndSeek")} ==");  // 区切り用
                 roleCommands.Add(CustomRoles.HASFox, Main.ChangeSomeLanguage.Value ? GetString("HASFox") : "hfo");
                 roleCommands.Add(CustomRoles.HASTroll, Main.ChangeSomeLanguage.Value ? GetString("HASTroll") : "htr");
-                if (roleA != "T") roleA = "K";
+                LastL = Main.ChangeSomeLanguage.Value ? $"{TranslationController.Instance.currentLanguage.languageID}" : "N";
 #pragma warning restore IDE0028
             }
 
@@ -549,8 +550,11 @@ namespace TownOfHost
                 if (String.Compare(role, roleName, true) == 0 || String.Compare(role, roleShort, true) == 0)
                 {
                     if (player == 0)
+                    {
                         Utils.SendMessage(GetString(roleName) + GetString($"{roleName}InfoLong"));
-                    else Utils.SendMessage(GetString(roleName) + GetString($"{roleName}InfoLong"), player);
+                    }
+                    else
+                        Utils.SendMessage(GetString(roleName) + GetString($"{roleName}InfoLong"), player);
                     return;
                 }
 
@@ -579,8 +583,7 @@ namespace TownOfHost
             foreach (var role in roles)
             {
                 if (role.ChatCommand is null) continue;
-                if (Main.ChangeSomeLanguage.Value && roleA != "N" /*&& CultureInfo.CurrentCulture.Name != "en-US" 一応翻訳ファイルがあるから*/) { roleCommands[role.RoleName] = GetString($"{role.RoleName}"); roleA = "T"; }
-                else { roleCommands[role.RoleName] = role.ChatCommand; roleA = "K"; }
+                roleCommands[role.RoleName] = Main.ChangeSomeLanguage.Value ? GetString($"{role.RoleName}") : role.ChatCommand;
             }
         }
         public static void OnReceiveChat(PlayerControl player, string text)
@@ -657,6 +660,12 @@ namespace TownOfHost
 
                 case "/timer":
                 case "/tr":
+                    foreach (var pc in Main.AllPlayerControls)
+                    {
+                        if (pc.PlayerId == player.PlayerId) continue;
+                        MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(player.NetId, (byte)RpcCalls.Exiled, SendOption.Reliable, pc.GetClientId());
+                        AmongUsClient.Instance.FinishRpcImmediately(writer);
+                    }
                     if (!GameStates.IsInGame)
                         Utils.ShowTimer(player.PlayerId);
                     break;

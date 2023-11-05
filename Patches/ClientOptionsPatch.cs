@@ -16,7 +16,7 @@ namespace TownOfHost
         private static ClientActionItem WebHookD;
         private static ClientActionItem Yomiage;
         private static ClientActionItem UseZoom;
-        //private static ClientActionItem SyncYomiage;
+        private static ClientActionItem SyncYomiage;
 
         public static void Postfix(OptionsMenuBehaviour __instance)
         {
@@ -61,11 +61,10 @@ namespace TownOfHost
             {
                 UseZoom = ClientOptionItem.Create("UseZoom", Main.UseZoom, __instance);
             }
-            //if (SyncYomiage == null || SyncYomiage.ToggleButton == null)
-            //{
-            //    SyncYomiage = ClientOptionItem.Create("SyncYomiage", Main.SyncYomiage, __instance);
-            //}
-
+            if (SyncYomiage == null || SyncYomiage.ToggleButton == null)
+            {
+                SyncYomiage = ClientOptionItem.Create("SyncYomiage", Main.SyncYomiage, __instance);
+            }
             if (ModUnloaderScreen.Popup == null)
             {
                 ModUnloaderScreen.Init(__instance);

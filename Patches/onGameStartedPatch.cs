@@ -31,7 +31,6 @@ namespace TownOfHost
             Main.SKMadmateNowCount = 0;
 
             Main.AfterMeetingDeathPlayers = new();
-            Main.ResetCamPlayerList = new();
             Main.clientIdList = new();
 
             Main.CheckShapeshift = new();
@@ -44,7 +43,7 @@ namespace TownOfHost
 
             Main.introDestroyed = false;
 
-            RandomSpawn.CustomNetworkTransformPatch.NumOfTP = new();
+            RandomSpawn.CustomNetworkTransformPatch.FirstTP = new();
 
             MeetingTimeManager.Init();
             Main.DefaultCrewmateVision = Main.RealOptionsData.GetFloat(FloatOptionNames.CrewLightMod);
@@ -87,7 +86,7 @@ namespace TownOfHost
                 ReportDeadBodyPatch.WaitReport[pc.PlayerId] = new();
                 pc.cosmetics.nameText.text = pc.name;
 
-                RandomSpawn.CustomNetworkTransformPatch.NumOfTP.Add(pc.PlayerId, 0);
+                RandomSpawn.CustomNetworkTransformPatch.FirstTP.Add(pc.PlayerId, false);
                 var outfit = pc.Data.DefaultOutfit;
                 Camouflage.PlayerSkins[pc.PlayerId] = new GameData.PlayerOutfit().Set(outfit.PlayerName, outfit.ColorId, outfit.HatId, outfit.SkinId, outfit.VisorId, outfit.PetId);
                 Main.clientIdList.Add(pc.GetClientId());
@@ -176,7 +175,7 @@ namespace TownOfHost
                     Dictionary<(byte, byte), RoleTypes> rolesMap = new();
                     foreach (var (role, info) in CustomRoleManager.AllRolesInfo)
                     {
-                        if (info.RequireResetCam)
+                        if (info.IsDesyncImpostor)
                         {
                             AssignDesyncRole(role, AllPlayers, senders, rolesMap, BaseRole: info.BaseRoleType.Invoke());
                         }
@@ -286,7 +285,7 @@ namespace TownOfHost
                 foreach (var role in CustomRolesHelper.AllRoles.Where(x => x < CustomRoles.NotAssigned))
                 {
                     if (role.IsVanilla()) continue;
-                    if (CustomRoleManager.GetRoleInfo(role) is SimpleRoleInfo info && info.RequireResetCam) continue;
+                    if (CustomRoleManager.GetRoleInfo(role)?.IsDesyncImpostor == true) continue;
                     var baseRoleTypes = role.GetRoleTypes() switch
                     {
                         RoleTypes.Impostor => Impostors,
@@ -480,7 +479,7 @@ namespace TownOfHost
             int count = 0;
             foreach (var role in CustomRolesHelper.AllRoles.Where(x => x < CustomRoles.NotAssigned))
             {
-                if (CustomRoleManager.GetRoleInfo(role) is SimpleRoleInfo info && info.RequireResetCam) continue;
+                if (CustomRoleManager.GetRoleInfo(role)?.IsDesyncImpostor == true) continue;
                 if (role == CustomRoles.Egoist && Main.NormalOptions.GetInt(Int32OptionNames.NumImpostors) <= 1) continue;
                 if (role.GetRoleTypes() == roleTypes)
                     count += role.GetRealCount();

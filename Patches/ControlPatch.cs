@@ -93,6 +93,7 @@ namespace TownOfHost
             //ミーティングを強制終了
             if (GetKeysDown(KeyCode.Return, KeyCode.M, KeyCode.LeftShift) && GameStates.IsMeeting)
             {
+                ExileControllerWrapUpPatch.AntiBlackout_LastExiled = null;
                 MeetingHud.Instance.RpcClose();
             }
             //ミーティングを終了

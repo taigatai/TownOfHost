@@ -3,12 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using UnityEngine;
-using Hazel;
-
-//using TownOfHost.Roles.Core;
-//using TownOfHost.Roles.Neutral;
-//アプデ対応の参考
-//https://github.com/Hyz-sui/TownOfHost-H
 
 namespace TownOfHost
 {
@@ -35,41 +29,22 @@ namespace TownOfHost
             }
         }
     }
-
-    [HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.UpdateSystem), typeof(SystemTypes), typeof(PlayerControl), typeof(MessageReader))]
-    public static class MessageReaderUpdateSystemPatch
-    {
-        public static void Postfix(ShipStatus __instance, [HarmonyArgument(0)] SystemTypes systemType, [HarmonyArgument(1)] PlayerControl player, [HarmonyArgument(2)] MessageReader reader)
-        {
-            RepairSystemPatch.Postfix();
-        }
-    }
-
     [HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.UpdateSystem), typeof(SystemTypes), typeof(PlayerControl), typeof(byte))]
-    class RepairSystemPatch
+    class ShipStatusUpdateSystemPatch
     {
-        public static bool Prefix(ShipStatus __instance,
+        public static void Prefix(ShipStatus __instance,
             [HarmonyArgument(0)] SystemTypes systemType,
             [HarmonyArgument(1)] PlayerControl player,
             [HarmonyArgument(2)] byte amount)
         {
-            Logger.Info("SystemType: " + systemType.ToString() + ", PlayerName: " + player.GetNameWithRole() + ", amount: " + amount, "RepairSystem");
-
+            if (systemType != SystemTypes.Sabotage)
+            {
+                Logger.Info("SystemType: " + systemType.ToString() + ", PlayerName: " + player.GetNameWithRole() + ", amount: " + amount, "UpdateSystem");
+            }
             if (RepairSender.enabled && AmongUsClient.Instance.NetworkMode != NetworkModes.OnlineGame)
             {
                 Logger.SendInGame("SystemType: " + systemType.ToString() + ", PlayerName: " + player.GetNameWithRole() + ", amount: " + amount);
             }
-            if (!AmongUsClient.Instance.AmHost) return true; //以下、ホストのみ実行
-
-            else
-            {
-                //return CustomRoleManager.OnSabotage(player, systemType, amount);
-            }
-            return true;
-        }
-        public static void Postfix()
-        {
-            Camouflage.CheckCamouflage();
         }
         public static void CheckAndOpenDoorsRange(ShipStatus __instance, int amount, int min, int max)
         {
@@ -87,10 +62,6 @@ namespace TownOfHost
                     __instance.RpcUpdateSystem(SystemTypes.Doors, (byte)id);
                 }
         }
-        public static bool OnSabotage(PlayerControl player, SystemTypes systemType, byte amount)
-        {
-            return true;
-        }
     }
     [HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.CloseDoorsOfType))]
     class CloseDoorsPatch
@@ -107,7 +78,6 @@ namespace TownOfHost
         {
             Logger.CurrentMethod();
             Logger.Info("-----------ゲーム開始-----------", "Phase");
-            if (GameStates.IsModHost) Utils.WH_ShowActiveRoles();
 
             Utils.CountAlivePlayers(true);
         }

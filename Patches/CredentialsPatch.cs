@@ -95,14 +95,14 @@ namespace TownOfHost
                     SpecialEventText.gameObject.SetActive(true);
                 }
                 SpecialEventText.enabled = TitleLogoPatch.amongUsLogo != null;
-                /*if (Main.IsInitialRelease)
+                if (Main.IsInitialRelease)
                 {
                     SpecialEventText.text = $"Happy Birthday to {Main.ModName}!";
                     if (ColorUtility.TryParseHtmlString(Main.ModColor, out var col))
                     {
                         SpecialEventText.color = col;
                     }
-                }*/
+                }
                 if (Main.IsChristmas && CultureInfo.CurrentCulture.Name == "ja-JP")
                 {
                     //このソースコ―ドを見た人へ。口外しないでもらえると嬉しいです...
