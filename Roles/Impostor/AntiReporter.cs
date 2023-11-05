@@ -83,7 +83,7 @@ public sealed class AntiReporter : RoleBase, IImpostor
         if (megaphone == false || mg.ContainsKey(target.PlayerId)) return;
         mg.Add(target.PlayerId, 0f);
         Use--;
-        killer.RpcGuardAndKill(target);
+        killer.RpcProtectedMurderPlayer(target);
         Logger.Info($"{target.name}のメガホンを間違えて壊しちゃった!! ﾃﾍ", "AntiReporter");
         megaphone = false;
         SendRPC();

@@ -6,8 +6,10 @@ using Hazel;
 using Il2CppSystem.Text;
 
 using AmongUs.GameOptions;
+using TownOfHost.Attributes;
 using TownOfHost.Roles.Core.Interfaces;
 using TownOfHost.Roles.AddOns.Common;
+using TownOfHost.Modules;
 
 namespace TownOfHost.Roles.Core;
 
@@ -28,7 +30,7 @@ public static class CustomRoleManager
     /// </summary>
     /// <param name="attemptKiller">実際にキルを行ったプレイヤー 不変</param>
     /// <param name="attemptTarget">>Killerが実際にキルを行おうとしたプレイヤー 不変</param>
-    public static void OnCheckMurder(PlayerControl attemptKiller, PlayerControl attemptTarget)
+    public static bool OnCheckMurder(PlayerControl attemptKiller, PlayerControl attemptTarget)
         => OnCheckMurder(attemptKiller, attemptTarget, attemptKiller, attemptTarget);
     /// <summary>
     ///
@@ -37,7 +39,7 @@ public static class CustomRoleManager
     /// <param name="attemptTarget">>Killerが実際にキルを行おうとしたプレイヤー 不変</param>
     /// <param name="appearanceKiller">見た目上でキルを行うプレイヤー 可変</param>
     /// <param name="appearanceTarget">見た目上でキルされるプレイヤー 可変</param>
-    public static void OnCheckMurder(PlayerControl attemptKiller, PlayerControl attemptTarget, PlayerControl appearanceKiller, PlayerControl appearanceTarget)
+    public static bool OnCheckMurder(PlayerControl attemptKiller, PlayerControl attemptTarget, PlayerControl appearanceKiller, PlayerControl appearanceTarget)
     {
         Logger.Info($"Attempt  :{attemptKiller.GetNameWithRole()} => {attemptTarget.GetNameWithRole()}", "CheckMurder");
         if (appearanceKiller != attemptKiller || appearanceTarget != attemptTarget)
@@ -50,8 +52,7 @@ public static class CustomRoleManager
         // 無効なキルをブロックする処理 必ず最初に実行する
         if (!CheckMurderPatch.CheckForInvalidMurdering(info))
         {
-            appearanceKiller.RpcMurderPlayer(appearanceTarget, false);
-            return;
+            return false;
         }
 
         var killerRole = attemptKiller.GetRoleClass();
@@ -67,8 +68,7 @@ public static class CustomRoleManager
                 {
                     if (!targetRole.OnCheckMurderAsTarget(info))
                     {
-                        appearanceKiller.RpcMurderPlayer(appearanceTarget, false);
-                        return;
+                        return false;
                     }
                 }
             }
@@ -81,13 +81,14 @@ public static class CustomRoleManager
         {
             //MurderPlayer用にinfoを保存
             CheckMurderInfos[appearanceKiller.PlayerId] = info;
-            appearanceKiller.RpcMurderPlayer(appearanceTarget, true);
+            appearanceKiller.RpcMurderPlayer(appearanceTarget);
+            return true;
         }
         else
         {
             if (!info.CanKill) Logger.Info($"{appearanceTarget.GetNameWithRole()}をキル出来ない。", "CheckMurder");
             if (!info.DoKill) Logger.Info($"{appearanceKiller.GetNameWithRole()}はキルしない。", "CheckMurder");
-            appearanceKiller.RpcMurderPlayer(appearanceTarget, false);
+            return false;
         }
     }
     /// <summary>
@@ -174,23 +175,20 @@ public static class CustomRoleManager
     /// </summary>
     public static HashSet<Action<PlayerControl>> OnFixedUpdateOthers = new();
 
-    public static bool OnSabotage(PlayerControl player, SystemTypes systemType, byte amount)
+    public static bool OnSabotage(PlayerControl player, SystemTypes systemType)
     {
         bool cancel = false;
         foreach (var roleClass in AllActiveRoles.Values)
         {
-            if (!roleClass.OnSabotage(player, systemType, amount))
+            if (!roleClass.OnSabotage(player, systemType))
             {
                 cancel = true;
             }
         }
-        if (!RepairSystemPatch.OnSabotage(player, systemType, amount))
-        {
-            cancel = true;
-        }
         return !cancel;
     }
     // ==初期化関連処理 ==
+    [GameModuleInitializer]
     public static void Initialize()
     {
         AllRolesInfo.Do(kvp => kvp.Value.IsEnable = kvp.Key.IsEnable());
@@ -201,8 +199,6 @@ public static class CustomRoleManager
         CheckMurderInfos.Clear();
         OnMurderPlayerOthers.Clear();
         OnFixedUpdateOthers.Clear();
-        SchrodingerPatch.SResetPlayer();
-        PlayerSkinPatch.RemoveAll();
     }
     public static void CreateInstance()
     {

@@ -6,6 +6,7 @@ using TownOfHost.Roles.Core;
 using TownOfHost.Roles.Core.Interfaces;
 
 using static TownOfHost.Patches.MovingPlatformBehaviourPatch;
+using TownOfHost.Modules;
 
 namespace TownOfHost.Roles.Impostor;
 public sealed class TeleportKiller : RoleBase, IImpostor
@@ -32,7 +33,8 @@ public sealed class TeleportKiller : RoleBase, IImpostor
         Ventgaaa = Optionventgaaa.GetBool();
         Maximum = OptionmMaximum.GetFloat();
         Duration = OptionDuration.GetFloat();
-        LeaveSkin = OptionLeaveSkin.GetBool();
+        //LeaveSkin = OptionLeaveSkin.GetBool();
+        TpKillCooldownReset = OptionTpKillCooldownReset.GetBool();
         usecount = 0;
     }
     enum OptionName
@@ -42,21 +44,24 @@ public sealed class TeleportKiller : RoleBase, IImpostor
         Ventgaaa,
         Maximum,
         Duration,
-        LeaveSkin
+        //LeaveSkin,
+        TpKillCooldownReset
     }
     static OptionItem OptionKillCoolDown;
     static OptionItem OptionCoolDown;
     static OptionItem Optionventgaaa;
     static OptionItem OptionmMaximum;
     static OptionItem OptionDuration;
-    static OptionItem OptionLeaveSkin;
+    //static OptionItem OptionLeaveSkin;
+    static OptionItem OptionTpKillCooldownReset;
     static float KillCooldown;
     static float Cooldown;
     static bool Ventgaaa;
     static float Maximum;
     static int usecount;
     static float Duration;
-    static bool LeaveSkin;
+    //static bool LeaveSkin;
+    static bool TpKillCooldownReset;
     private static void SetupOptionItem()
     {
         OptionKillCoolDown = FloatOptionItem.Create(RoleInfo, 10, OptionName.KillCooldown, new(2.5f, 180f, 2.5f), 30f, false)
@@ -68,7 +73,8 @@ public sealed class TeleportKiller : RoleBase, IImpostor
             .SetValueFormat(OptionFormat.Times);
         OptionDuration = FloatOptionItem.Create(RoleInfo, 14, OptionName.Duration, new(0f, 15, 1f), 5f, false)
             .SetValueFormat(OptionFormat.Seconds);
-        OptionLeaveSkin = BooleanOptionItem.Create(RoleInfo, 15, OptionName.LeaveSkin, false, false);
+        //OptionLeaveSkin = BooleanOptionItem.Create(RoleInfo, 15, OptionName.LeaveSkin, false, false);
+        OptionTpKillCooldownReset = BooleanOptionItem.Create(RoleInfo, 15, OptionName.TpKillCooldownReset, false, false);
     }
 
     public bool CanBeLastImpostor { get; } = false;
@@ -85,9 +91,10 @@ public sealed class TeleportKiller : RoleBase, IImpostor
     }
     public override void OnShapeshift(PlayerControl target)
     {
-        if (!AmongUsClient.Instance.AmHost || Player == target || !target.IsAlive() || (usecount > Maximum && Maximum != 0)) return;
+        if (!AmongUsClient.Instance.AmHost || Player.PlayerId == target.PlayerId || !target.IsAlive() || (usecount >= Maximum && Maximum != 0)) return;
         usecount++;
         SendRPC();
+        Logger.Info($"Player: {Player.name},Target: {target.name}, count: {usecount}", "TeleportKiller");
         _ = new LateTask(() =>
         {
             var p = Player.transform.position;
@@ -108,17 +115,20 @@ public sealed class TeleportKiller : RoleBase, IImpostor
                     if (target.GetCustomRole().IsImpostor() || target.MyPhysics.Animations.IsPlayingAnyLadderAnimation() || target.UseMovingPlatform()) return;
                     PlayerState.GetByPlayerId(target.PlayerId).DeathReason = CustomDeathReason.Kill;
                     target.RpcMurderPlayer(target, true);
+                    if (TpKillCooldownReset) Player.SetKillCooldown(KillCooldown);
                 }
-            }, 0.5f);
-        }, 1.5f);
+            }, 0.5f, "TeleportKiller-2");
+        }, 1.5f, "TeleportKiller-1");
     }
 
     public override string GetProgressText(bool comms = false) => Maximum == 0 ? "" : Utils.ColorString(Maximum >= usecount ? Color.red : Color.gray, $"({Maximum - usecount})");
 
+    public float CalculateKillCooldown() => KillCooldown;
+
     public override void ApplyGameOptions(IGameOptions opt)
     {
         AURoleOptions.ShapeshifterCooldown = Cooldown;
-        AURoleOptions.ShapeshifterLeaveSkin = LeaveSkin;
+        //AURoleOptions.ShapeshifterLeaveSkin = LeaveSkin;
         AURoleOptions.ShapeshifterDuration = Duration;
         AURoleOptions.KillCooldown = KillCooldown;
     }

@@ -18,7 +18,11 @@ public sealed class Mare : RoleBase, IImpostor
             CustomRoleTypes.Impostor,
             2300,
             SetupCustomOption,
-            "ma"
+            "ma",
+            assignInfo: new(CustomRoles.Mare, CustomRoleTypes.Impostor)
+            {
+                IsInitiallyAssignableCallBack = () => ShipStatus.Instance.Systems.TryGetValue(SystemTypes.Electrical, out var systemType) && systemType.TryCast<SwitchSystem>(out _),  // 停電が存在する
+            }
         );
     public Mare(PlayerControl player)
     : base(
@@ -88,31 +92,30 @@ public sealed class Mare : RoleBase, IImpostor
 
         IsActivateKill = reader.ReadBoolean();
     }
+
     public override void OnFixedUpdate(PlayerControl player)
     {
         if (GameStates.IsInTask && IsActivateKill)
         {
             if (!Utils.IsActive(SystemTypes.Electrical))
             {
+                //停電解除されたらキルモード解除
                 ActivateKill(false);
             }
         }
     }
-    public override bool OnSabotage(PlayerControl player, SystemTypes systemType, byte amount)
+    public override bool OnSabotage(PlayerControl player, SystemTypes systemType)
     {
         if (systemType == SystemTypes.Electrical)
         {
-            if (amount.HasAnyBit(128))
+            _ = new LateTask(() =>
             {
-                _ = new LateTask(() =>
+                //まだ停電が直っていなければキル可能モードに
+                if (Utils.IsActive(SystemTypes.Electrical))
                 {
-                    //まだ停電が直っていなければキル可能モードに
-                    if (Utils.IsActive(SystemTypes.Electrical))
-                    {
-                        ActivateKill(true);
-                    }
-                }, 4.0f, "Mare Activate Kill");
-            }
+                    ActivateKill(true);
+                }
+            }, 4.0f, "Mare Activate Kill");
         }
         return true;
     }

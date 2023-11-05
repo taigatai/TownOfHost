@@ -114,7 +114,7 @@ class Penguin : RoleBase, IImpostor
             if (target != AbductVictim)
             {
                 //拉致中は拉致相手しか切れない
-                Player.RpcMurderPlayer(AbductVictim, true);
+                Player.RpcMurderPlayer(AbductVictim);
                 Player.ResetKillCooldown();
                 info.DoKill = false;
             }
@@ -152,13 +152,13 @@ class Penguin : RoleBase, IImpostor
         // 時間切れ状態で会議を迎えたらはしご中でも構わずキルする
         if (AbductVictim != null && AbductTimer <= 0f)
         {
-            Player.RpcMurderPlayer(AbductVictim, true);
+            Player.RpcMurderPlayer(AbductVictim);
         }
         if (MeetingKill)
         {
             if (!AmongUsClient.Instance.AmHost) return;
             if (AbductVictim == null) return;
-            Player.RpcMurderPlayer(AbductVictim, true);
+            Player.RpcMurderPlayer(AbductVictim);
             RemoveVictim();
         }
     }
@@ -210,7 +210,8 @@ class Penguin : RoleBase, IImpostor
                     {
                         var sId = abductVictim.NetTransform.lastSequenceId + 5;
                         abductVictim.NetTransform.SnapTo(Player.transform.position, (ushort)sId);
-                        Player.MurderPlayer(abductVictim, ExtendedPlayerControl.SuccessFlags);
+                        Player.MurderPlayer(abductVictim);
+
                         var sender = CustomRpcSender.Create("PenguinMurder");
                         {
                             sender.AutoStartRpc(abductVictim.NetTransform.NetId, (byte)RpcCalls.SnapTo);
@@ -222,7 +223,7 @@ class Penguin : RoleBase, IImpostor
                             sender.AutoStartRpc(Player.NetId, (byte)RpcCalls.MurderPlayer);
                             {
                                 sender.WriteNetObject(abductVictim);
-                                sender.Write((int)ExtendedPlayerControl.SuccessFlags);
+                                sender.Write((int)ExtendedPlayerControl.SucceededFlags);
                             }
                             sender.EndRpc();
                         }

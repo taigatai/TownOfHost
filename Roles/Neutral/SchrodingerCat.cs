@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+
 using UnityEngine;
+
 using AmongUs.GameOptions;
 using Hazel;
 
@@ -9,6 +11,7 @@ using TownOfHost.Roles.Core;
 using TownOfHost.Roles.Core.Interfaces;
 
 namespace TownOfHost.Roles.Neutral;
+
 // マッドが属性化したらマッド状態時の特別扱いを削除する
 public sealed class SchrodingerCat : RoleBase, IAdditionalWinner, IDeathReasonSeeable, IKillFlashSeeable
 {
@@ -17,7 +20,7 @@ public sealed class SchrodingerCat : RoleBase, IAdditionalWinner, IDeathReasonSe
             typeof(SchrodingerCat),
             player => new SchrodingerCat(player),
             CustomRoles.SchrodingerCat,
-            () => /*CanKill ? RoleTypes.Impostor : */RoleTypes.Crewmate,
+            () => RoleTypes.Crewmate,
             CustomRoleTypes.Neutral,
             50400,
             SetupOptionItem,
@@ -34,19 +37,16 @@ public sealed class SchrodingerCat : RoleBase, IAdditionalWinner, IDeathReasonSe
         CanWinTheCrewmateBeforeChange = OptionCanWinTheCrewmateBeforeChange.GetBool();
         ChangeTeamWhenExile = OptionChangeTeamWhenExile.GetBool();
         CanSeeKillableTeammate = OptionCanSeeKillableTeammate.GetBool();
-        //CanKill = OptionCanKill.GetBool();
     }
     static OptionItem OptionCanWinTheCrewmateBeforeChange;
     static OptionItem OptionChangeTeamWhenExile;
     static OptionItem OptionCanSeeKillableTeammate;
-    //static OptionItem OptionCanKill;
 
     enum OptionName
     {
         CanBeforeSchrodingerCatWinTheCrewmate,
         SchrodingerCatExiledTeamChanges,
         SchrodingerCatCanSeeKillableTeammate,
-        //CanKill,
     }
     static bool CanWinTheCrewmateBeforeChange;
     static bool ChangeTeamWhenExile;
@@ -118,7 +118,7 @@ public sealed class SchrodingerCat : RoleBase, IAdditionalWinner, IDeathReasonSe
     /// </summary>
     private void ChangeTeamOnKill(PlayerControl killer)
     {
-        killer.RpcGuardAndKill(Player);
+        killer.RpcProtectedMurderPlayer(Player);
         if (killer.GetRoleClass() is ISchrodingerCatOwner catOwner)
         {
             catOwner.OnSchrodingerCatKill(this);
@@ -195,9 +195,8 @@ public sealed class SchrodingerCat : RoleBase, IAdditionalWinner, IDeathReasonSe
         var team = candidates[rand.Next(candidates.Count)];
         RpcSetTeam(team);
     }
-    public bool CheckWin(out AdditionalWinners winnerType)
+    public bool CheckWin(ref CustomRoles winnerRole)
     {
-        winnerType = AdditionalWinners.SchrodingerCat;
         bool? won = Team switch
         {
             TeamType.None => CustomWinnerHolder.WinnerTeam == CustomWinner.Crewmate && CanWinTheCrewmateBeforeChange,
@@ -205,6 +204,8 @@ public sealed class SchrodingerCat : RoleBase, IAdditionalWinner, IDeathReasonSe
             TeamType.Crew => CustomWinnerHolder.WinnerTeam == CustomWinner.Crewmate,
             TeamType.Jackal => CustomWinnerHolder.WinnerTeam == CustomWinner.Jackal,
             TeamType.Egoist => CustomWinnerHolder.WinnerTeam == CustomWinner.Egoist,
+            TeamType.CountKiller => CustomWinnerHolder.WinnerTeam == CustomWinner.CountKiller,
+            TeamType.Remotekiller => CustomWinnerHolder.WinnerTeam == CustomWinner.Remotekiller,
             _ => null,
         };
         if (!won.HasValue)
@@ -271,7 +272,7 @@ public sealed class SchrodingerCat : RoleBase, IAdditionalWinner, IDeathReasonSe
         Egoist,
         /// <summary>
         /// カウントキラーに所属する状態
-        /// </summary> 
+        /// </summary>
         CountKiller,
         /// <summary>
         /// リモートキラーに所属する状態
@@ -288,7 +289,6 @@ public sealed class SchrodingerCat : RoleBase, IAdditionalWinner, IDeathReasonSe
             TeamType.Jackal => Utils.GetRoleColor(CustomRoles.Jackal),
             TeamType.Egoist => Utils.GetRoleColor(CustomRoles.Egoist),
             TeamType.CountKiller => Utils.GetRoleColor(CustomRoles.CountKiller),
-            TeamType.Remotekiller => Utils.GetRoleColor(CustomRoles.Remotekiller),
             _ => null,
         };
         if (!color.HasValue)

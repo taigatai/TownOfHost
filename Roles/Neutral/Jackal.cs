@@ -20,7 +20,10 @@ namespace TownOfHost.Roles.Neutral
                 "#00b4eb",
                 true,
                 countType: CountTypes.Jackal,
-                assignCountRule: new(1, 1, 1)
+                assignInfo: new RoleAssignInfo(CustomRoles.Jackal, CustomRoleTypes.Neutral)
+                {
+                    AssignCountRule = new(1, 1, 1)
+                }
             );
         public Jackal(PlayerControl player)
         : base(
@@ -43,7 +46,9 @@ namespace TownOfHost.Roles.Neutral
         public static bool CanVent;
         public static bool CanUseSabotage;
         private static bool HasImpostorVision;
+
         public SchrodingerCat.TeamType SchrodingerCatChangeTo => SchrodingerCat.TeamType.Jackal;
+
         private static void SetupOptionItem()
         {
             OptionKillCooldown = FloatOptionItem.Create(RoleInfo, 10, GeneralOption.KillCooldown, new(2.5f, 180f, 2.5f), 30f, false)
@@ -53,28 +58,9 @@ namespace TownOfHost.Roles.Neutral
             OptionHasImpostorVision = BooleanOptionItem.Create(RoleInfo, 13, GeneralOption.ImpostorVision, true, false);
         }
         public float CalculateKillCooldown() => KillCooldown;
+        public bool CanUseSabotageButton() => CanUseSabotage;
+        public bool CanUseImpostorVentButton() => CanVent;
         public override void ApplyGameOptions(IGameOptions opt) => opt.SetVision(HasImpostorVision);
-        public static void SetHudActive(HudManager __instance, bool isActive)
-        {
-            __instance.SabotageButton.ToggleVisible(isActive && CanUseSabotage);
-        }
-        public override bool OnInvokeSabotage(SystemTypes systemType) => CanUseSabotage;
         public void ApplySchrodingerCatOptions(IGameOptions option) => ApplyGameOptions(option);
-        public void OnCheckMurderAsKiller(MurderInfo info)
-        {
-            var (killer, target) = info.AttemptTuple;
-            if (target.Is(CustomRoles.JackalMafia) || !info.CanKill) info.DoKill = false;
-            else info.DoKill = true;
-        }
-        public override string GetMark(PlayerControl seer, PlayerControl seen, bool isForMeeting = false)
-        {
-            //seenが省略の場合seer
-            seen ??= seer;
-            if (seen.Is(CustomRoles.JackalMafia))
-            {
-                return Utils.ColorString(RoleInfo.RoleColor, "★");
-            }
-            else return "";
-        }
     }
 }

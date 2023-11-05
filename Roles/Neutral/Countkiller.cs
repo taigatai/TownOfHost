@@ -1,6 +1,5 @@
 using AmongUs.GameOptions;
 using Hazel;
-
 using TownOfHost.Roles.Core;
 using TownOfHost.Roles.Core.Interfaces;
 
@@ -20,7 +19,10 @@ public sealed class CountKiller : RoleBase, IKiller, ISchrodingerCatOwner
             "ck",
             "#FF1493",
             true,
-            assignCountRule: new(1, 1, 1)
+            assignInfo: new RoleAssignInfo(CustomRoles.CountKiller, CustomRoleTypes.Neutral)
+            {
+                AssignCountRule = new(1, 1, 1)
+            }
         );
     public CountKiller(PlayerControl player)
     : base(
@@ -65,9 +67,6 @@ public sealed class CountKiller : RoleBase, IKiller, ISchrodingerCatOwner
         var playerId = Player.PlayerId;
         KillCooldown = OptionKillCooldown.GetFloat();
 
-        if (!Main.ResetCamPlayerList.Contains(playerId))
-            Main.ResetCamPlayerList.Add(playerId);
-
         VictoryCount = OptionVictoryCount.GetInt();
         Logger.Info($"{Utils.GetPlayerById(playerId)?.GetNameWithRole()} : 後{VictoryCount}発", "CountKiller");
     }
@@ -83,7 +82,8 @@ public sealed class CountKiller : RoleBase, IKiller, ISchrodingerCatOwner
         VictoryCount = reader.ReadInt32();
     }
     public bool CanUseKillButton() => Player.IsAlive() && VictoryCount > 0;
-
+    public bool CanUseSabotageButton() => false;
+    public bool CanUseImpostorVentButton() => CanVent;
     public void OnMurderPlayerAsKiller(MurderInfo info)
     {
         if (Is(info.AttemptKiller) && !info.IsSuicide)

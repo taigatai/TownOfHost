@@ -106,16 +106,16 @@ public sealed class Stealth : RoleBase, IImpostor
             // タイマーが0になったらみんなの視界を戻してタイマーと暗転プレイヤーをリセットする
             if (darkenTimer <= 0)
             {
-                if (AmongUsClient.Instance.AmHost)
-                {
-                    ResetDarkenState();
-                }
+                ResetDarkenState();
             }
         }
     }
     public override void OnStartMeeting()
     {
-        ResetDarkenState();
+        if (AmongUsClient.Instance.AmHost)
+        {
+            ResetDarkenState();
+        }
     }
     private void RpcDarken(SystemTypes? roomType)
     {

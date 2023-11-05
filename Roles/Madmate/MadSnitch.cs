@@ -33,6 +33,7 @@ public sealed class MadSnitch : RoleBase, IKillFlashSeeable, IDeathReasonSeeable
         canVent = OptionCanVent.GetBool();
         canAlsoBeExposedToImpostor = OptionCanAlsoBeExposedToImpostor.GetBool();
         TaskTrigger = OptionTaskTrigger.GetInt();
+
         CustomRoleManager.MarkOthers.Add(GetMarkOthers);
     }
 
@@ -83,13 +84,6 @@ public sealed class MadSnitch : RoleBase, IKillFlashSeeable, IDeathReasonSeeable
     public override bool OnCompleteTask()
     {
         CheckAndAddNameColorToImpostors();
-        {
-            foreach (var impostor in Main.AllPlayerControls.Where(player => player.Is(CustomRoleTypes.Impostor)).ToArray())
-            {
-                NameColorManager.Add(Player.PlayerId, impostor.PlayerId, impostor.GetRoleColorCode());
-            }
-        }
-
         return true;
     }
     public static string GetMarkOthers(PlayerControl seer, PlayerControl seen = null, bool isForMeeting = false)

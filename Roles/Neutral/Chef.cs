@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using AmongUs.GameOptions;
 using Hazel;
-
 using TownOfHost.Roles.Core;
 using TownOfHost.Roles.Core.Interfaces;
 
@@ -34,18 +33,16 @@ public sealed class Chef : RoleBase, IKiller, IAdditionalWinner
         ChefTarget = new(GameData.Instance.PlayerCount);
     }
 
-    public bool CanKill { get; private set; } = false;
+    public bool CanKill { get; private set; } = true;
     public Dictionary<byte, bool> ChefTarget;
 
     public override void Add()
     {
         foreach (var ar in Main.AllPlayerControls)
             ChefTarget.Add(ar.PlayerId, false);
-        if (!Main.ResetCamPlayerList.Contains(Player.PlayerId))
-            Main.ResetCamPlayerList.Add(Player.PlayerId);
     }
-    public override bool OnInvokeSabotage(SystemTypes systemType) => false;
-    public bool CanUseKillButton() => true;
+    public bool CanUseSabotageButton() => false;
+    public bool CanUseImpostorVentButton() => false;
     public bool OverrideKillButtonText(out string text)
     {
         text = GetString("ChefButtonText");
@@ -79,6 +76,7 @@ public sealed class Chef : RoleBase, IKiller, IAdditionalWinner
         ChefTarget[target.PlayerId] = true;
         SendRPC(target.PlayerId);
         Utils.NotifyRoles();
+        Logger.Info($"Player: {Player.name},Target: {target.name}", "Chef");
         info.DoKill = false;
     }
     public override string GetMark(PlayerControl seer, PlayerControl seen, bool isForMeeting = false)
@@ -107,9 +105,8 @@ public sealed class Chef : RoleBase, IKiller, IAdditionalWinner
         }
         return (c, all);
     }
-    public bool CheckWin(out AdditionalWinners winnerType)
+    public bool CheckWin(ref CustomRoles winnerRole)
     {
-        winnerType = AdditionalWinners.Chef;
         var c = GetCtargetCount();
         return Player.IsAlive() && c.Item1 == c.Item2;
     }

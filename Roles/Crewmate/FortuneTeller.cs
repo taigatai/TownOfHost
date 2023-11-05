@@ -7,6 +7,7 @@ using TownOfHost.Roles.Core;
 
 using static TownOfHost.Modules.MeetingVoteManager;
 using static TownOfHost.Translator;
+using TownOfHost.Modules;
 
 namespace TownOfHost.Roles.Crewmate;
 public sealed class FortuneTeller : RoleBase
@@ -108,8 +109,9 @@ public sealed class FortuneTeller : RoleBase
     {
         if (Max > count && voter.PlayerId == Player.PlayerId)
         {
-            if (Votemode == VoteMode.uvote && Player.PlayerId != votedForId && votedForId != Skip)
+            if (Votemode == VoteMode.uvote)
             {
+                if (Player.PlayerId == votedForId || votedForId == Skip) return true;
                 Uranai(votedForId);
                 return false;
             }
@@ -150,6 +152,7 @@ public sealed class FortuneTeller : RoleBase
         count++;
         SendRPC(votedForId);
         Divination.Add(votedForId);
+        Logger.Info($"Player: {Player.name},Target: {votedForId}, count: {count}", "FortuneTeller");
         var role = Utils.GetPlayerById(votedForId).GetCustomRole();
         var s = "";
         if (role.IsCrewmate()) s = "です！";

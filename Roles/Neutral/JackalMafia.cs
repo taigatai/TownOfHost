@@ -20,7 +20,10 @@ namespace TownOfHost.Roles.Neutral
                 "#00b4eb",
                 true,
                 countType: CountTypes.Jackal,
-                assignCountRule: new(1, 1, 1)
+                assignInfo: new RoleAssignInfo(CustomRoles.JackalMafia, CustomRoleTypes.Neutral)
+                {
+                    AssignCountRule = new(1, 1, 1)
+                }
             );
         public JackalMafia(PlayerControl player)
         : base(
@@ -54,10 +57,8 @@ namespace TownOfHost.Roles.Neutral
         public SchrodingerCat.TeamType SchrodingerCatChangeTo => SchrodingerCat.TeamType.Jackal;
         public float CalculateKillCooldown() => KillCooldown;
         public override void ApplyGameOptions(IGameOptions opt) => opt.SetVision(HasImpostorVision);
-        public static void SetHudActive(HudManager __instance, bool isActive)
-        {
-            __instance.SabotageButton.ToggleVisible(isActive && CanUseSabotage);
-        }
+        public bool CanUseSabotageButton() => CanUseSabotage;
+        public bool CanUseImpostorVentButton() => CanVent;
         public override bool OnInvokeSabotage(SystemTypes systemType) => CanUseSabotage;
         public bool CanUseKillButton()
         {

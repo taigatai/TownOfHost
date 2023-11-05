@@ -63,7 +63,7 @@ public sealed class Mayor : RoleBase
     }
     public override void OnReportDeadBody(PlayerControl reporter, GameData.PlayerInfo target)
     {
-        if (reporter && target == null) //ボタン
+        if (Is(reporter) && target == null) //ボタン
             LeftButtonCount--;
     }
     public override bool OnEnterVent(PlayerPhysics physics, int ventId)

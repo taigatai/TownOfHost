@@ -50,9 +50,11 @@ namespace TownOfHost
         // ==========
         //Sorry for many Japanese comments.
         public const string PluginGuid = "com.kymario.townofhost-k";
-        public const string PluginVersion = "5.1.14";
+        public const string PluginVersion = "5.1.21";
         // サポートされている最低のAmongUsバージョン
         public static readonly string LowestSupportedVersion = "2023.10.24";
+        // このバージョンのみで公開ルームを無効にする場合
+        public static readonly bool IsPublicAvailableOnThisVersion = false;
         public Harmony Harmony { get; } = new Harmony(PluginGuid);
         public static Version version = Version.Parse(PluginVersion);
         public static BepInEx.Logging.ManualLogSource Logger;
@@ -68,6 +70,7 @@ namespace TownOfHost
         public static ConfigEntry<bool> ForceJapanese { get; private set; }
         public static ConfigEntry<bool> JapaneseRoleName { get; private set; }
         public static ConfigEntry<int> MessageWait { get; private set; }
+        public static ConfigEntry<bool> ShowResults { get; private set; }
         public static ConfigEntry<bool> ChangeSomeLanguage { get; private set; }
         public static ConfigEntry<bool> Hiderecommendedsettings { get; private set; }
         public static ConfigEntry<bool> UseWebHook { get; private set; }
@@ -92,7 +95,6 @@ namespace TownOfHost
         public static Dictionary<byte, Color32> PlayerColors = new();
         public static Dictionary<byte, CustomDeathReason> AfterMeetingDeathPlayers = new();
         public static Dictionary<CustomRoles, string> roleColors;
-        public static List<byte> ResetCamPlayerList;
         public static List<byte> winnerList;
         public static List<int> clientIdList;
         public static List<(string, byte, string)> MessagesToSend;
@@ -138,6 +140,7 @@ namespace TownOfHost
             HideColor = Config.Bind("Client Options", "Hide Game Code Color", $"{ModColor}");
             ForceJapanese = Config.Bind("Client Options", "Force Japanese", false);
             JapaneseRoleName = Config.Bind("Client Options", "Japanese Role Name", true);
+            ShowResults = Config.Bind("Result", "Show Results", true);
             ChangeSomeLanguage = Config.Bind("Client Options", "Change Some Language", false);
             Hiderecommendedsettings = Config.Bind("Client Options", "Hide recommended settings", false);
             UseWebHook = Config.Bind("Client Options", "UseWebHook", false);
@@ -280,15 +283,6 @@ namespace TownOfHost
         CountKiller = CustomRoles.CountKiller,
         HASTroll = CustomRoles.HASTroll,
         TaskPlayerB = CustomRoles.TaskPlayerB,
-    }
-    public enum AdditionalWinners
-    {
-        None = -1,
-        Opportunist = CustomRoles.Opportunist,
-        SchrodingerCat = CustomRoles.SchrodingerCat,
-        Executioner = CustomRoles.Executioner,
-        HASFox = CustomRoles.HASFox,
-        Chef = CustomRoles.Chef
     }
     /*public enum CustomRoles : byte
     {

@@ -115,12 +115,13 @@ public sealed class PlagueDoctor : RoleBase, IKiller
             InfectInactiveTime += 5f;
     }
     public bool CanUseKillButton() => InfectCount != 0;
+    public bool CanUseImpostorVentButton() => false;
     public bool OverrideKillButtonText(out string text)
     {
         text = GetString("Infected");
         return true;
     }
-    public override bool OnInvokeSabotage(SystemTypes systemType) => false;
+    public bool CanUseSabotageButton() => false;
     public override string GetProgressText(bool comms = false)
     {
         return Utils.ColorString(RoleInfo.RoleColor.ShadeColor(0.25f), $"({InfectCount})");
@@ -155,7 +156,7 @@ public sealed class PlagueDoctor : RoleBase, IKiller
         if (InfectCount > 0)
         {
             InfectCount--;
-            killer.RpcGuardAndKill(target);
+            killer.RpcProtectedMurderPlayer(target);
             DirectInfect(target);
         }
         info.DoKill = false;
@@ -312,7 +313,7 @@ public sealed class PlagueDoctor : RoleBase, IKiller
             {
                 if (player.Is(CustomRoles.PlagueDoctor)) continue;
                 player.SetRealKiller(null);
-                player.RpcMurderPlayer(player, true);
+                player.RpcMurderPlayer(player);
                 var state = PlayerState.GetByPlayerId(player.PlayerId);
                 state.DeathReason = CustomDeathReason.Infected;
                 state.SetDead();

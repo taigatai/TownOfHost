@@ -1,5 +1,4 @@
 using AmongUs.GameOptions;
-
 using TownOfHost.Roles.Core;
 using TownOfHost.Roles.Core.Interfaces;
 using static TownOfHost.Translator;
@@ -22,7 +21,10 @@ namespace TownOfHost.Roles.Neutral
                 true,
                 introSound: () => GetIntroSound(RoleTypes.Impostor),
                 countType: CountTypes.Remotekiller,
-                assignCountRule: new(1, 1, 1)
+                assignInfo: new RoleAssignInfo(CustomRoles.Remotekiller, CustomRoleTypes.Neutral)
+                {
+                    AssignCountRule = new(1, 1, 1)
+                }
             );
         public Remotekiller(PlayerControl player)
         : base(
@@ -36,7 +38,7 @@ namespace TownOfHost.Roles.Neutral
 
         private static OptionItem RKillCooldown;
         private static OptionItem RKillAnimation;
-        private static PlayerControl Rtarget;
+        private static byte Rtarget;
         private static float KillCooldown;
 
         public bool CanBeLastImpostor { get; } = false;
@@ -64,13 +66,13 @@ namespace TownOfHost.Roles.Neutral
             if (info.IsFakeSuicide) return;
             //登録
             killer.SetKillCooldown(KillCooldown);
-            Rtarget = target;
-            killer.RpcGuardAndKill(target);
+            Rtarget = target.PlayerId;
+            killer.RpcProtectedMurderPlayer(target);
             info.DoKill = false;
         }
         public override void OnReportDeadBody(PlayerControl _, GameData.PlayerInfo __)
         {
-            Rtarget = null;
+            Rtarget = 111;
         }
         public bool OverrideKillButtonText(out string text)
         {
@@ -80,26 +82,31 @@ namespace TownOfHost.Roles.Neutral
         public override bool OnEnterVent(PlayerPhysics physics, int ventId)
         {
             var user = physics.myPlayer;
-            if (Rtarget.IsAlive() && Rtarget != null)
+            if (Rtarget != 111 && Player.PlayerId == user.PlayerId)
             {
+                var target = Utils.GetPlayerById(Rtarget);
+                if (!target.IsAlive()) return true;
                 if (RKillAnimation.GetBool())
                 {
                     _ = new LateTask(() =>
                     {
-                        user.RpcMurderPlayer(Rtarget, true);
+                        user.RpcMurderPlayer(target, true);
                     }, 1f);
                 }
                 else
                 {
-                    Rtarget.SetRealKiller(user);
-                    Rtarget.RpcMurderPlayer(Rtarget, true);
+                    target.SetRealKiller(user);
+                    target.RpcMurderPlayer(target, true);
                 }
 
                 RPC.PlaySoundRPC(user.PlayerId, Sounds.KillSound);
                 RPC.PlaySoundRPC(user.PlayerId, Sounds.TaskComplete);
-                Logger.Info($"Remotekillerのターゲット{Rtarget.name}のキルに成功", "Remotekiller.kill");
+                Logger.Info($"Remotekillerのターゲット{target.name}のキルに成功", "Remotekiller.kill");
+                Rtarget = 111;
+                return !RKillAnimation.GetBool();
             }
-            return !RKillAnimation.GetBool();
+            return true;
         }
+        public bool CanUseSabotageButton() => false;
     }
 }

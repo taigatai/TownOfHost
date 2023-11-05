@@ -68,7 +68,7 @@ public sealed class Sniper : RoleBase, IImpostor
     bool MeetingReset;
     public static void SetupOptionItem()
     {
-        SniperBulletCount = IntegerOptionItem.Create(RoleInfo, 10, OptionName.SniperBulletCount, new(1, 99, 1), 2, false)
+        SniperBulletCount = IntegerOptionItem.Create(RoleInfo, 10, OptionName.SniperBulletCount, new(1, 5, 1), 2, false)
             .SetValueFormat(OptionFormat.Pieces);
         SniperPrecisionShooting = BooleanOptionItem.Create(RoleInfo, 11, OptionName.SniperPrecisionShooting, false, false);
         SniperAimAssist = BooleanOptionItem.Create(RoleInfo, 12, OptionName.SniperAimAssist, false, false);
@@ -235,7 +235,7 @@ public sealed class Sniper : RoleBase, IImpostor
             );
 
             //あたった通知
-            Player.RpcGuardAndKill();
+            Player.RpcProtectedMurderPlayer();
 
             //スナイプが起きたことを聞こえそうな対象に通知したい
             targets.Remove(snipedTarget);
@@ -247,18 +247,21 @@ public sealed class Sniper : RoleBase, IImpostor
                 Utils.NotifyRoles(SpecifySeer: otherPc);
             }
             SendRPC();
-            _ = new LateTask(() =>
-            {
-                snList.Clear();
-                if (targets.Count != 0)
+            _ = new LateTask(
+                () =>
                 {
-                    foreach (var otherPc in targets.Keys)
+                    snList.Clear();
+                    if (targets.Count != 0)
                     {
-                        Utils.NotifyRoles(SpecifySeer: otherPc);
+                        foreach (var otherPc in targets.Keys)
+                        {
+                            Utils.NotifyRoles(SpecifySeer: otherPc);
+                        }
+                        SendRPC();
                     }
-                    SendRPC();
-                }
-            }, 0.5f, "Sniper shot Notify");
+                },
+                0.5f, "Sniper shot Notify"
+                );
         }
     }
     public override void OnFixedUpdate(PlayerControl player)

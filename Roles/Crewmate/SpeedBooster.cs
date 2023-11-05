@@ -55,8 +55,8 @@ public sealed class SpeedBooster : RoleBase
     {
         var playerId = Player.PlayerId;
         if (Player.IsAlive()
-            && MyTaskState.HasCompletedEnoughCountOfTasks(TaskTrigger)
-            && (IsTaskFinished || MyTaskState.CompletedTasksCount >= TaskTrigger))
+            && BoostTarget == byte.MaxValue
+            && MyTaskState.HasCompletedEnoughCountOfTasks(TaskTrigger))
         {   //ｽﾋﾟﾌﾞが生きていて、SpeedBoostTargetに登録済みでなく、全タスク完了orトリガー数までタスクを完了している場合
             var rand = IRandom.Instance;
             List<PlayerControl> targetPlayers = new();

@@ -60,6 +60,7 @@ public sealed class Sheriff : RoleBase, IKiller, ISchrodingerCatOwner
     };
 
     public SchrodingerCat.TeamType SchrodingerCatChangeTo => SchrodingerCat.TeamType.Crew;
+
     private static void SetupOptionItem()
     {
         KillCooldown = FloatOptionItem.Create(RoleInfo, 10, GeneralOption.KillCooldown, new(0f, 990f, 1f), 30f, false)
@@ -118,9 +119,6 @@ public sealed class Sheriff : RoleBase, IKiller, ISchrodingerCatOwner
         var playerId = Player.PlayerId;
         CurrentKillCooldown = KillCooldown.GetFloat();
 
-        if (!Main.ResetCamPlayerList.Contains(playerId))
-            Main.ResetCamPlayerList.Add(playerId);
-
         ShotLimit = ShotLimitOpt.GetInt();
         Logger.Info($"{Utils.GetPlayerById(playerId)?.GetNameWithRole()} : 残り{ShotLimit}発", "Sheriff");
     }
@@ -140,7 +138,8 @@ public sealed class Sheriff : RoleBase, IKiller, ISchrodingerCatOwner
         => Player.IsAlive()
         && (CanKillAllAlive.GetBool() || GameStates.AlreadyDied)
         && ShotLimit > 0;
-    public override bool OnInvokeSabotage(SystemTypes systemType) => false;
+    public bool CanUseImpostorVentButton() => false;
+    public bool CanUseSabotageButton() => false;
     public override void ApplyGameOptions(IGameOptions opt)
     {
         opt.SetVision(false);
@@ -161,7 +160,7 @@ public sealed class Sheriff : RoleBase, IKiller, ISchrodingerCatOwner
             SendRPC();
             if (!CanBeKilledBy(target))
             {
-                killer.RpcMurderPlayer(killer, true);
+                killer.RpcMurderPlayer(killer);
                 PlayerState.GetByPlayerId(killer.PlayerId).DeathReason = CustomDeathReason.Misfire;
                 if (!MisfireKillsTarget.GetBool())
                 {
@@ -192,6 +191,7 @@ public sealed class Sheriff : RoleBase, IKiller, ISchrodingerCatOwner
                 _ => CanKillNeutrals.GetValue() == 0 || (SchrodingerCatKillTargetOptions.TryGetValue(schrodingerCat.Team, out var option) && option.GetBool()),
             };
         }
+
         return cRole.GetCustomRoleTypes() switch
         {
             CustomRoleTypes.Impostor => true,
