@@ -134,7 +134,6 @@ public class MeetingVoteManager
                 });
             }
         }
-
         if (AntiBlackout.OverrideExiledPlayer)
         {
             meetingHud.RpcVotingComplete(states.ToArray(), null, true);

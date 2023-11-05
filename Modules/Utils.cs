@@ -28,23 +28,22 @@ namespace TownOfHost
     {
         public static bool IsActive(SystemTypes type)
         {
-            //Logger.Info($"SystemTypes:{type}", "IsActive");
+            // ないものはfalse
+            if (!ShipStatus.Instance.Systems.ContainsKey(type))
+            {
+                return false;
+            }
             int mapId = Main.NormalOptions.MapId;
             switch (type)
             {
                 case SystemTypes.Electrical:
                     {
-                        if (mapId == 5) return false;
                         var SwitchSystem = ShipStatus.Instance.Systems[type].Cast<SwitchSystem>();
                         return SwitchSystem != null && SwitchSystem.IsActive;
                     }
                 case SystemTypes.Reactor:
                     {
                         if (mapId == 2) return false;
-                        else if (mapId == 4)
-                        {
-                            return IsActive(SystemTypes.HeliSabotage);
-                        }
                         else
                         {
                             var ReactorSystemType = ShipStatus.Instance.Systems[type].Cast<ReactorSystemType>();
@@ -77,13 +76,25 @@ namespace TownOfHost
                         }
                     }
                 case SystemTypes.HeliSabotage:
-                    var HeliSabotageSystem = ShipStatus.Instance.Systems[type].Cast<HeliSabotageSystem>();
-                    return HeliSabotageSystem != null && HeliSabotageSystem.IsActive;
-
+                    {
+                        var HeliSabotageSystem = ShipStatus.Instance.Systems[type].Cast<HeliSabotageSystem>();
+                        return HeliSabotageSystem != null && HeliSabotageSystem.IsActive;
+                    }
+                case SystemTypes.MushroomMixupSabotage:
+                    {
+                        var mushroomMixupSabotageSystem = ShipStatus.Instance.Systems[type].TryCast<MushroomMixupSabotageSystem>();
+                        return mushroomMixupSabotageSystem != null && mushroomMixupSabotageSystem.IsActive;
+                    }
                 default:
                     return false;
             }
         }
+        public static SystemTypes GetCriticalSabotageSystemType() => (MapNames)Main.NormalOptions.MapId switch
+        {
+            MapNames.Polus => SystemTypes.Laboratory,
+            MapNames.Airship => SystemTypes.HeliSabotage,
+            _ => SystemTypes.Reactor,
+        };
         public static void SetVision(this IGameOptions opt, bool HasImpVision)
         {
             if (HasImpVision)
@@ -148,14 +159,7 @@ namespace TownOfHost
         public static void KillFlash(this PlayerControl player, bool sound = true)
         {
             //キルフラッシュ(ブラックアウト+リアクターフラッシュ)の処理
-            bool ReactorCheck = false; //リアクターフラッシュの確認
-            var systemtypes = (MapNames)Main.NormalOptions.MapId switch
-            {
-                MapNames.Polus => SystemTypes.Laboratory,
-                MapNames.Airship => SystemTypes.HeliSabotage,
-                _ => SystemTypes.Reactor,
-            };
-            ReactorCheck = IsActive(systemtypes);
+            bool ReactorCheck = IsActive(GetCriticalSabotageSystemType());
 
             var Duration = Options.KillFlashDuration.GetFloat();
             if (ReactorCheck) Duration += 0.2f; //リアクター中はブラックアウトを長くする
@@ -206,13 +210,14 @@ namespace TownOfHost
         /// <param name="seer">見る側</param>
         /// <param name="seen">見られる側</param>
         /// <returns>構築されたRoleName</returns>
-        private static string GetDisplayRoleName(PlayerControl seer, PlayerControl seen = null)
+        public static string GetDisplayRoleName(PlayerControl seer, PlayerControl seen = null)
         {
             seen ??= seer;
             //デフォルト値
             bool enabled = seer == seen
                         || seen.Is(CustomRoles.GM)
                         || (Main.VisibleTasksCount && !seer.IsAlive() && Options.GhostCanSeeOtherRoles.GetBool())
+                        || (Options.LoversRole.GetBool() && seer.Is(CustomRoles.Lovers) && seen.Is(CustomRoles.Lovers))
                         || (Options.RoleImpostor.GetBool() && seer.GetCustomRole().IsImpostor() && seen.GetCustomRole().IsImpostor());
             var (roleColor, roleText) = GetTrueRoleNameData(seen.PlayerId);
 
@@ -431,15 +436,7 @@ namespace TownOfHost
         private static string GetProgressText(PlayerControl seer, PlayerControl seen = null)
         {
             seen ??= seer;
-            var comms = false;
-            foreach (PlayerTask task in PlayerControl.LocalPlayer.myTasks)
-            {
-                if (task.TaskType == TaskTypes.FixComms)
-                {
-                    comms = true;
-                    break;
-                }
-            }
+            var comms = IsActive(SystemTypes.Comms);
             bool enabled = seer == seen
                         || (Main.VisibleTasksCount && !seer.IsAlive() && Options.GhostCanSeeOtherTasks.GetBool());
             string text = GetProgressText(seen.PlayerId, comms);
@@ -841,7 +838,7 @@ namespace TownOfHost
                         float timerValue = GameStartManagerPatch.GetTimer();
                         int minutes = (int)timerValue / 60;
                         int seconds = (int)timerValue % 60;
-                        name += $"\r\n<color=red>{minutes:00}:{seconds:00}";
+                        name += $"\r\n<color=red>{minutes:00}:{seconds:00}</color>";
                         break;
                 }
             }
@@ -888,6 +885,7 @@ namespace TownOfHost
                 seerList = new();
                 seerList.Add(SpecifySeer);
             }
+            var isMushroomMixupActive = IsActive(SystemTypes.MushroomMixupSabotage);
             //seer:ここで行われた変更を見ることができるプレイヤー
             //target:seerが見ることができる変更の対象となるプレイヤー
             foreach (var seer in seerList)
@@ -901,71 +899,77 @@ namespace TownOfHost
                 logger.Info("NotifyRoles-Loop1-" + seer.GetNameWithRole() + ":START");
 
                 var seerRole = seer.GetRoleClass();
-
-                //名前の後ろに付けるマーカー
-                SelfMark.Clear();
-
-                //seer役職が対象のMark
-                SelfMark.Append(seerRole?.GetMark(seer, isForMeeting: isForMeeting));
-                //seerに関わらず発動するMark
-                SelfMark.Append(CustomRoleManager.GetMarkOthers(seer, isForMeeting: isForMeeting));
-
-                //ハートマークを付ける(自分に)
-                if (seer.Is(CustomRoles.Lovers)) SelfMark.Append(ColorString(GetRoleColor(CustomRoles.Lovers), "♡"));
-
-                if (Options.CurrentGameMode == CustomGameMode.TaskBattle)
+                // キノコカオス中で，seerが生きていてdesyncインポスターの場合に自身の名前を消す
+                if (isMushroomMixupActive && seer.IsAlive() && !seer.Is(CustomRoleTypes.Impostor) && seer.GetCustomRole().GetRoleInfo()?.IsDesyncImpostor == true)
                 {
-                    if (Options.TaskBattletaska.GetBool())
-                    {
-                        var t1 = 0;
-                        var t2 = 0;
-                        foreach (var pc in Main.AllPlayerControls)
-                        {
-                            t1 += pc.GetPlayerTaskState().AllTasksCount;
-                            t2 += pc.GetPlayerTaskState().CompletedTasksCount;
-                        }
-                        SelfMark.Append($"<color=yellow>({t2}/{t1})</color>");
-                    }
-                    if (Options.TaskBattletasko.GetBool())
-                    {
-                        var to = 0;
-                        foreach (var pc in Main.AllPlayerControls)
-                            if (pc.GetPlayerTaskState().CompletedTasksCount > to) to = pc.GetPlayerTaskState().CompletedTasksCount;
-                        SelfMark.Append($"<color=#00f7ff>({to})</color>");
-                    }
+                    seer.RpcSetNamePrivate("<size=0>", true, force: NoCache);
                 }
+                else
+                {
+                    //名前の後ろに付けるマーカー
+                    SelfMark.Clear();
 
-                //Markとは違い、改行してから追記されます。
-                SelfSuffix.Clear();
+                    //seer役職が対象のMark
+                    SelfMark.Append(seerRole?.GetMark(seer, isForMeeting: isForMeeting));
+                    //seerに関わらず発動するMark
+                    SelfMark.Append(CustomRoleManager.GetMarkOthers(seer, isForMeeting: isForMeeting));
 
-                //seer役職が対象のLowerText
-                SelfSuffix.Append(seerRole?.GetLowerText(seer, isForMeeting: isForMeeting));
-                //seerに関わらず発動するLowerText
-                SelfSuffix.Append(CustomRoleManager.GetLowerTextOthers(seer, isForMeeting: isForMeeting));
+                    //ハートマークを付ける(自分に)
+                    if (seer.Is(CustomRoles.Lovers)) SelfMark.Append(ColorString(GetRoleColor(CustomRoles.Lovers), "♡"));
 
-                //seer役職が対象のSuffix
-                SelfSuffix.Append(seerRole?.GetSuffix(seer, isForMeeting: isForMeeting));
-                //seerに関わらず発動するSuffix
-                SelfSuffix.Append(CustomRoleManager.GetSuffixOthers(seer, isForMeeting: isForMeeting));
+                    if (Options.CurrentGameMode == CustomGameMode.TaskBattle)
+                    {
+                        if (Options.TaskBattletaska.GetBool())
+                        {
+                            var t1 = 0;
+                            var t2 = 0;
+                            foreach (var pc in Main.AllPlayerControls)
+                            {
+                                t1 += pc.GetPlayerTaskState().AllTasksCount;
+                                t2 += pc.GetPlayerTaskState().CompletedTasksCount;
+                            }
+                            SelfMark.Append($"<color=yellow>({t2}/{t1})</color>");
+                        }
+                        if (Options.TaskBattletasko.GetBool())
+                        {
+                            var to = 0;
+                            foreach (var pc in Main.AllPlayerControls)
+                                if (pc.GetPlayerTaskState().CompletedTasksCount > to) to = pc.GetPlayerTaskState().CompletedTasksCount;
+                            SelfMark.Append($"<color=#00f7ff>({to})</color>");
+                        }
+                    }
 
-                //RealNameを取得 なければ現在の名前をRealNamesに書き込む
-                string SeerRealName = seer.GetRealName(isForMeeting);
+                    //Markとは違い、改行してから追記されます。
+                    SelfSuffix.Clear();
 
-                if (!isForMeeting && MeetingStates.FirstMeeting && Options.ChangeNameToRoleInfo.GetBool())
-                    SeerRealName = seer.GetRoleInfo();
+                    //seer役職が対象のLowerText
+                    SelfSuffix.Append(seerRole?.GetLowerText(seer, isForMeeting: isForMeeting));
+                    //seerに関わらず発動するLowerText
+                    SelfSuffix.Append(CustomRoleManager.GetLowerTextOthers(seer, isForMeeting: isForMeeting));
 
-                //seerの役職名とSelfTaskTextとseerのプレイヤー名とSelfMarkを合成
-                var (enabled, text) = GetRoleNameAndProgressTextData(seer);
-                string SelfRoleName = enabled ? $"<size={fontSize}>{text}</size>" : "";
-                string SelfDeathReason = seer.KnowDeathReason(seer) ? $"({ColorString(GetRoleColor(CustomRoles.Doctor), GetVitalText(seer.PlayerId))})" : "";
-                string SelfName = $"{ColorString(seer.GetRoleColor(), SeerRealName)}{SelfDeathReason}{SelfMark}";
-                SelfName = SelfRoleName + "\r\n" + SelfName;
-                SelfName += SelfSuffix.ToString() == "" ? "" : "\r\n " + SelfSuffix.ToString();
-                if (!isForMeeting) SelfName += "\r\n";
+                    //seer役職が対象のSuffix
+                    SelfSuffix.Append(seerRole?.GetSuffix(seer, isForMeeting: isForMeeting));
+                    //seerに関わらず発動するSuffix
+                    SelfSuffix.Append(CustomRoleManager.GetSuffixOthers(seer, isForMeeting: isForMeeting));
 
-                //適用
-                seer.RpcSetNamePrivate(SelfName, true, force: NoCache);
+                    //RealNameを取得 なければ現在の名前をRealNamesに書き込む
+                    string SeerRealName = seer.GetRealName(isForMeeting);
 
+                    if (!isForMeeting && MeetingStates.FirstMeeting && Options.ChangeNameToRoleInfo.GetBool())
+                        SeerRealName = seer.GetRoleInfo();
+
+                    //seerの役職名とSelfTaskTextとseerのプレイヤー名とSelfMarkを合成
+                    var (enabled, text) = GetRoleNameAndProgressTextData(seer);
+                    string SelfRoleName = enabled ? $"<size={fontSize}>{text}</size>" : "";
+                    string SelfDeathReason = seer.KnowDeathReason(seer) ? $"({ColorString(GetRoleColor(CustomRoles.Doctor), GetVitalText(seer.PlayerId))})" : "";
+                    string SelfName = $"{ColorString(seer.GetRoleColor(), SeerRealName)}{SelfDeathReason}{SelfMark}";
+                    SelfName = SelfRoleName + "\r\n" + SelfName;
+                    SelfName += SelfSuffix.ToString() == "" ? "" : "\r\n " + SelfSuffix.ToString();
+                    if (!isForMeeting) SelfName += "\r\n";
+
+                    //適用
+                    seer.RpcSetNamePrivate(SelfName, true, force: NoCache);
+                }
                 //seerが死んでいる場合など、必要なときのみ第二ループを実行する
                 if (seer.Data.IsDead //seerが死んでいる
                     || seer.GetCustomRole().IsImpostor() //seerがインポスター
@@ -980,6 +984,7 @@ namespace TownOfHost
                     || seer.IsNeutralKiller() //seerがキル出来るニュートラル
                     || IsActive(SystemTypes.Electrical)
                     || IsActive(SystemTypes.Comms)
+                    || isMushroomMixupActive
                     || Options.CurrentGameMode == CustomGameMode.TaskBattle
                     || NoCache
                     || ForceLoop
@@ -991,65 +996,72 @@ namespace TownOfHost
                         if (target == seer) continue;
                         logger.Info("NotifyRoles-Loop2-" + target.GetNameWithRole() + ":START");
 
-                        //名前の後ろに付けるマーカー
-                        TargetMark.Clear();
-
-                        //seer役職が対象のMark
-                        TargetMark.Append(seerRole?.GetMark(seer, target, isForMeeting));
-                        //seerに関わらず発動するMark
-                        TargetMark.Append(CustomRoleManager.GetMarkOthers(seer, target, isForMeeting));
-
-                        //ハートマークを付ける(相手に)
-                        if (seer.Is(CustomRoles.Lovers) && target.Is(CustomRoles.Lovers))
+                        // キノコカオス中で，targetが生きていてseerがdesyncインポスターの場合にtargetの名前を消す
+                        if (isMushroomMixupActive && target.IsAlive() && !seer.Is(CustomRoleTypes.Impostor) && seer.GetCustomRole().GetRoleInfo()?.IsDesyncImpostor == true)
                         {
-                            TargetMark.Append($"<color={GetRoleColorCode(CustomRoles.Lovers)}>♡</color>");
+                            target.RpcSetNamePrivate("<size=0>", true, seer, force: NoCache);
                         }
-                        //霊界からラバーズ視認
-                        else if (seer.Data.IsDead && !seer.Is(CustomRoles.Lovers) && target.Is(CustomRoles.Lovers))
+                        else
                         {
-                            TargetMark.Append($"<color={GetRoleColorCode(CustomRoles.Lovers)}>♡</color>");
+                            //名前の後ろに付けるマーカー
+                            TargetMark.Clear();
+
+                            //seer役職が対象のMark
+                            TargetMark.Append(seerRole?.GetMark(seer, target, isForMeeting));
+                            //seerに関わらず発動するMark
+                            TargetMark.Append(CustomRoleManager.GetMarkOthers(seer, target, isForMeeting));
+
+                            //ハートマークを付ける(相手に)
+                            if (seer.Is(CustomRoles.Lovers) && target.Is(CustomRoles.Lovers))
+                            {
+                                TargetMark.Append($"<color={GetRoleColorCode(CustomRoles.Lovers)}>♡</color>");
+                            }
+                            //霊界からラバーズ視認
+                            else if (seer.Data.IsDead && !seer.Is(CustomRoles.Lovers) && target.Is(CustomRoles.Lovers))
+                            {
+                                TargetMark.Append($"<color={GetRoleColorCode(CustomRoles.Lovers)}>♡</color>");
+                            }
+                            if (Options.CurrentGameMode == CustomGameMode.TaskBattle)
+                                if (Options.TaskBattletaskc.GetBool())
+                                    TargetMark.Append($"<color=yellow>({target.GetPlayerTaskState().CompletedTasksCount}/{target.GetPlayerTaskState().AllTasksCount})</color>");
+
+                            //他人の役職とタスクは幽霊が他人の役職を見れるようになっていてかつ、seerが死んでいる場合のみ表示されます。それ以外の場合は空になります。
+                            var targetRoleData = GetRoleNameAndProgressTextData(seer, target);
+                            var TargetRoleText = targetRoleData.enabled ? $"<size={fontSize}>{targetRoleData.text}</size>\r\n" : "";
+
+                            TargetSuffix.Clear();
+                            //seerに関わらず発動するLowerText
+                            TargetSuffix.Append(CustomRoleManager.GetLowerTextOthers(seer, target, isForMeeting: isForMeeting));
+
+                            //seer役職が対象のSuffix
+                            TargetSuffix.Append(seerRole?.GetSuffix(seer, target, isForMeeting: isForMeeting));
+                            //seerに関わらず発動するSuffix
+                            TargetSuffix.Append(CustomRoleManager.GetSuffixOthers(seer, target, isForMeeting: isForMeeting));
+                            // 空でなければ先頭に改行を挿入
+                            if (TargetSuffix.Length > 0)
+                            {
+                                TargetSuffix.Insert(0, "\r\n");
+                            }
+
+                            //RealNameを取得 なければ現在の名前をRealNamesに書き込む
+                            string TargetPlayerName = target.GetRealName(isForMeeting);
+
+                            //ターゲットのプレイヤー名の色を書き換えます。
+                            TargetPlayerName = TargetPlayerName.ApplyNameColorData(seer, target, isForMeeting);
+
+                            string TargetDeathReason = "";
+                            if (seer.KnowDeathReason(target))
+                                TargetDeathReason = $"({ColorString(GetRoleColor(CustomRoles.Doctor), GetVitalText(target.PlayerId))})";
+
+                            if (IsActive(SystemTypes.Comms) && Options.CommsCamouflage.GetBool() && !isForMeeting)
+                                TargetPlayerName = $"<size=0%>{TargetPlayerName}</size>";
+
+                            //全てのテキストを合成します。
+                            string TargetName = $"{TargetRoleText}{TargetPlayerName}{TargetDeathReason}{TargetMark}{TargetSuffix}";
+
+                            //適用
+                            target.RpcSetNamePrivate(TargetName, true, seer, force: NoCache);
                         }
-                        if (Options.CurrentGameMode == CustomGameMode.TaskBattle)
-                            if (Options.TaskBattletaskc.GetBool())
-                                TargetMark.Append($"<color=yellow>({target.GetPlayerTaskState().CompletedTasksCount}/{target.GetPlayerTaskState().AllTasksCount})</color>");
-
-                        //他人の役職とタスクは幽霊が他人の役職を見れるようになっていてかつ、seerが死んでいる場合のみ表示されます。それ以外の場合は空になります。
-                        var targetRoleData = GetRoleNameAndProgressTextData(seer, target);
-                        var TargetRoleText = targetRoleData.enabled ? $"<size={fontSize}>{targetRoleData.text}</size>\r\n" : "";
-
-                        TargetSuffix.Clear();
-                        //seerに関わらず発動するLowerText
-                        TargetSuffix.Append(CustomRoleManager.GetLowerTextOthers(seer, target, isForMeeting: isForMeeting));
-
-                        //seer役職が対象のSuffix
-                        TargetSuffix.Append(seerRole?.GetSuffix(seer, target, isForMeeting: isForMeeting));
-                        //seerに関わらず発動するSuffix
-                        TargetSuffix.Append(CustomRoleManager.GetSuffixOthers(seer, target, isForMeeting: isForMeeting));
-                        // 空でなければ先頭に改行を挿入
-                        if (TargetSuffix.Length > 0)
-                        {
-                            TargetSuffix.Insert(0, "\r\n");
-                        }
-
-                        //RealNameを取得 なければ現在の名前をRealNamesに書き込む
-                        string TargetPlayerName = target.GetRealName(isForMeeting);
-
-                        //ターゲットのプレイヤー名の色を書き換えます。
-                        TargetPlayerName = TargetPlayerName.ApplyNameColorData(seer, target, isForMeeting);
-
-                        string TargetDeathReason = "";
-                        if (seer.KnowDeathReason(target))
-                            TargetDeathReason = $"({ColorString(GetRoleColor(CustomRoles.Doctor), GetVitalText(target.PlayerId))})";
-
-                        if (IsActive(SystemTypes.Comms) && Options.CommsCamouflage.GetBool() && !isForMeeting)
-                            TargetPlayerName = $"<size=0%>{TargetPlayerName}</size>";
-
-                        //全てのテキストを合成します。
-                        string TargetName = $"{TargetRoleText}{TargetPlayerName}{TargetDeathReason}{TargetMark}{TargetSuffix}";
-
-                        //適用
-                        target.RpcSetNamePrivate(TargetName, true, seer, force: NoCache);
-
                         logger.Info("NotifyRoles-Loop2-" + target.GetNameWithRole() + ":END");
                     }
                 }
@@ -1072,6 +1084,13 @@ namespace TownOfHost
             if (Options.AirShipVariableElectrical.GetBool())
                 AirShipElectricalDoors.Initialize();
             DoorsReset.ResetDoors();
+            // 空デデンバグ対応 会議後にベントを空にする
+            var ventilationSystem = ShipStatus.Instance.Systems.TryGetValue(SystemTypes.Ventilation, out var systemType) ? systemType.TryCast<VentilationSystem>() : null;
+            if (ventilationSystem != null)
+            {
+                ventilationSystem.PlayersInsideVents.Clear();
+                ventilationSystem.IsDirty = true;
+            }
         }
 
         public static void ChangeInt(ref int ChangeTo, int input, int max)

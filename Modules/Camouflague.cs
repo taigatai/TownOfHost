@@ -51,7 +51,16 @@ namespace TownOfHost
 
             if (oldIsCamouflage != IsCamouflage)
             {
-                Main.AllPlayerControls.Do(pc => Camouflage.RpcSetSkin(pc));
+                foreach (var pc in Main.AllPlayerControls)
+                {
+                    RpcSetSkin(pc);
+
+                    // The code is intended to remove pets at dead players to combat a vanilla bug
+                    if (!IsCamouflage && !pc.IsAlive())
+                    {
+                        pc.RpcSetPet("");
+                    }
+                }
                 Utils.NotifyRoles(NoCache: true);
             }
         }
@@ -84,6 +93,9 @@ namespace TownOfHost
 
                 newOutfit = PlayerSkins[id];
             }
+
+            if (newOutfit.Compare(target.Data.DefaultOutfit)) return;
+
             Logger.Info($"newOutfit={newOutfit.GetString()}", "RpcSetSkin");
 
             var sender = CustomRpcSender.Create(name: $"Camouflage.RpcSetSkin({target.Data.PlayerName})");

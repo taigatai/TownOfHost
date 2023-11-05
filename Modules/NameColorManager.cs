@@ -1,5 +1,5 @@
 using Hazel;
-
+using TownOfHost.Modules;
 using TownOfHost.Roles.Core;
 using TownOfHost.Roles.Impostor;
 

@@ -22,7 +22,6 @@ namespace TownOfHost
         public static string latestTitle = null;
         public static string downloadUrl = null;
         public static GenericPopup InfoPopup;
-        public static bool DameVersion = false;
         public static bool publicok = Main.AllowPublicRoom;
         public static bool matchmaking = false;
         public static string body = "詳細のチェックに失敗しました";
@@ -38,9 +37,9 @@ namespace TownOfHost
             {
                 CheckRelease(Main.BetaBuildURL.Value != "").GetAwaiter().GetResult();
             }
-            MainMenuManagerPatch.UpdateButton.gameObject.SetActive(hasUpdate);
-            MainMenuManagerPatch.UpdateButton.transform.Find("FontPlacer/Text_TMP").GetComponent<TMPro.TMP_Text>().SetText($"{GetString("updateButton")}\n{latestTitle}");
-            MainMenuManagerPatch.UpdateButton2.gameObject.SetActive(hasUpdate);
+            MainMenuManagerPatch.UpdateButton.Button.gameObject.SetActive(hasUpdate);
+            MainMenuManagerPatch.UpdateButton.Button.transform.Find("FontPlacer/Text_TMP").GetComponent<TMPro.TMP_Text>().SetText($"{GetString("updateButton")}\n{latestTitle}");
+            MainMenuManagerPatch.UpdateButton2.Button.gameObject.SetActive(hasUpdate);
         }
         public static async Task<bool> CheckRelease(bool beta = false)
         {
@@ -96,7 +95,8 @@ namespace TownOfHost
                 isChecked = true;
                 isBroken = false;
                 body = data["body"].ToString();
-                if (data["body"].ToString().Contains("[使用禁止バージョン]")) DameVersion = true;
+                if (body.Contains("📢公開ルーム○")) publicok = true;
+                else if (body.Contains("📢公開ルーム×")) publicok = false;
             }
             catch (Exception ex)
             {
