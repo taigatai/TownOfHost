@@ -7,7 +7,6 @@ using TownOfHost.Roles.Core;
 
 using static TownOfHost.Modules.MeetingVoteManager;
 using static TownOfHost.Translator;
-using TownOfHost.Modules;
 
 namespace TownOfHost.Roles.Crewmate;
 public sealed class FortuneTeller : RoleBase
@@ -19,7 +18,7 @@ public sealed class FortuneTeller : RoleBase
             CustomRoles.FortuneTeller,
             () => RoleTypes.Crewmate,
             CustomRoleTypes.Crewmate,
-            60036,
+            28000,
             SetupOptionItem,
             "fo",
             "#6b3ec3",

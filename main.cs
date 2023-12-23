@@ -50,7 +50,7 @@ namespace TownOfHost
         // ==========
         //Sorry for many Japanese comments.
         public const string PluginGuid = "com.kymario.townofhost-k";
-        public const string PluginVersion = "5.1.22";
+        public const string PluginVersion = "5.1.31";
         // サポートされている最低のAmongUsバージョン
         public static readonly string LowestSupportedVersion = "2023.10.24";
         // このバージョンのみで公開ルームを無効にする場合
@@ -77,6 +77,7 @@ namespace TownOfHost
         public static ConfigEntry<bool> UseYomiage { get; private set; }
         public static ConfigEntry<bool> UseZoom { get; private set; }
         public static ConfigEntry<bool> SyncYomiage { get; private set; }
+        public static ConfigEntry<bool> CustomName { get; private set; }
         public static Dictionary<byte, PlayerVersion> playerVersion = new();
         //Preset Name Options
         public static ConfigEntry<string> Preset1 { get; private set; }
@@ -85,7 +86,6 @@ namespace TownOfHost
         public static ConfigEntry<string> Preset4 { get; private set; }
         public static ConfigEntry<string> Preset5 { get; private set; }
         //Other Configs
-        public static ConfigEntry<string> WebhookURL { get; private set; }
         public static ConfigEntry<string> BetaBuildURL { get; private set; }
         public static ConfigEntry<float> LastKillCooldown { get; private set; }
         public static ConfigEntry<float> LastShapeshifterCooldown { get; private set; }
@@ -147,6 +147,7 @@ namespace TownOfHost
             UseYomiage = Config.Bind("Client Options", "UseYomiage", false);
             UseZoom = Config.Bind("Client Options", "UseZoom", false);
             SyncYomiage = Config.Bind("Client Options", "SyncYomiage", true);
+            CustomName = Config.Bind("Client Options", "CustomName", true);
             DebugKeyInput = Config.Bind("Authentication", "Debug Key", "");
 
             Logger = BepInEx.Logging.Logger.CreateLogSource("TownOfHost-K");
@@ -173,7 +174,6 @@ namespace TownOfHost
             Preset3 = Config.Bind("Preset Name Options", "Preset3", "Preset_3");
             Preset4 = Config.Bind("Preset Name Options", "Preset4", "Preset_4");
             Preset5 = Config.Bind("Preset Name Options", "Preset5", "Preset_5");
-            WebhookURL = Config.Bind("Other", "WebhookURL", "none");
             BetaBuildURL = Config.Bind("Other", "BetaBuildURL", "");
             MessageWait = Config.Bind("Other", "MessageWait", 1);
             LastKillCooldown = Config.Bind("Other", "LastKillCooldown", (float)30);

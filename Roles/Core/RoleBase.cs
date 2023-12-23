@@ -4,7 +4,6 @@ using UnityEngine;
 using Hazel;
 using AmongUs.GameOptions;
 using static TownOfHost.Translator;
-using TownOfHost.Modules;
 
 namespace TownOfHost.Roles.Core;
 

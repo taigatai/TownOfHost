@@ -33,16 +33,11 @@ public sealed class Chef : RoleBase, IKiller, IAdditionalWinner
         ChefTarget = new(GameData.Instance.PlayerCount);
     }
 
-    public bool CanKill { get; private set; } = true;
-    public Dictionary<byte, bool> ChefTarget;
-
-    public override void Add()
-    {
-        foreach (var ar in Main.AllPlayerControls)
-            ChefTarget.Add(ar.PlayerId, false);
-    }
+    public bool CanKill { get; private set; } = false;
+    public List<byte> ChefTarget;
     public bool CanUseSabotageButton() => false;
     public bool CanUseImpostorVentButton() => false;
+    public bool CanUseKillButton() => true;
     public bool OverrideKillButtonText(out string text)
     {
         text = GetString("ChefButtonText");
@@ -62,18 +57,18 @@ public sealed class Chef : RoleBase, IKiller, IAdditionalWinner
     {
         if (rpcType != CustomRPC.SetChefTarget) return;
 
-        ChefTarget[reader.ReadByte()] = true;
+        ChefTarget.Add(reader.ReadByte());
     }
     public void OnCheckMurderAsKiller(MurderInfo info)
     {
         var (killer, target) = info.AttemptTuple;
-        if (ChefTarget[target.PlayerId] == true)
+        if (ChefTarget.Contains(target.PlayerId))
         {
             info.DoKill = false;
             return;
         }
         killer.SetKillCooldown(1);
-        ChefTarget[target.PlayerId] = true;
+        ChefTarget.Add(target.PlayerId);
         SendRPC(target.PlayerId);
         Utils.NotifyRoles();
         Logger.Info($"Player: {Player.name},Target: {target.name}", "Chef");
@@ -83,7 +78,7 @@ public sealed class Chef : RoleBase, IKiller, IAdditionalWinner
     {
         //seenが省略の場合seer
         seen ??= seer;
-        if (ChefTarget[seen.PlayerId])
+        if (ChefTarget.Contains(seen.PlayerId))
             return Utils.ColorString(RoleInfo.RoleColor, "▲");
         else return "";
     }
@@ -100,7 +95,7 @@ public sealed class Chef : RoleBase, IKiller, IAdditionalWinner
             if (pc.PlayerId == Player.PlayerId) continue;
 
             all++;
-            if (ChefTarget.TryGetValue(pc.PlayerId, out var Ctarget) && Ctarget)
+            if (ChefTarget.Contains(pc.PlayerId))
                 c++;
         }
         return (c, all);

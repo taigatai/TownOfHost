@@ -9,7 +9,6 @@ using AmongUs.GameOptions;
 using TownOfHost.Attributes;
 using TownOfHost.Roles.Core.Interfaces;
 using TownOfHost.Roles.AddOns.Common;
-using TownOfHost.Modules;
 
 namespace TownOfHost.Roles.Core;
 
@@ -419,7 +418,7 @@ public enum CustomRoles
     ToiletFan,
     Bakery,
     FortuneTeller,
-    Balancer,
+    TaskStar,
     //Neutral
     Arsonist,
     Egoist,

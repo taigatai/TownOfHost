@@ -1,12 +1,11 @@
 using AmongUs.GameOptions;
 using UnityEngine;
 using Hazel;
+using System.Collections.Generic;
+using HarmonyLib;
 
 using TownOfHost.Roles.Core;
 using TownOfHost.Roles.Core.Interfaces;
-
-using static TownOfHost.Patches.MovingPlatformBehaviourPatch;
-using TownOfHost.Modules;
 
 namespace TownOfHost.Roles.Impostor;
 public sealed class TeleportKiller : RoleBase, IImpostor
@@ -18,7 +17,7 @@ public sealed class TeleportKiller : RoleBase, IImpostor
             CustomRoles.TeleportKiller,
             () => RoleTypes.Shapeshifter,
             CustomRoleTypes.Impostor,
-            60016,
+            60015,
             SetupOptionItem,
             "tk"
         );
@@ -30,51 +29,82 @@ public sealed class TeleportKiller : RoleBase, IImpostor
     {
         KillCooldown = OptionKillCoolDown.GetFloat();
         Cooldown = OptionCoolDown.GetFloat();
-        Ventgaaa = Optionventgaaa.GetBool();
         Maximum = OptionmMaximum.GetFloat();
         Duration = OptionDuration.GetFloat();
+        Ventgaaa = Optionventgaaa.GetBool();
+        PlatformFall = OptionPlatformFall.GetBool();
+        LadderFall = OptionLadderFall.GetBool();
+        //ZiplineFall = OptionZiplineFall.GetBool(); ziplineってどうやってチェックするの..
+        Dokkaaaan = OptionDokkaaaan.GetBool();
         //LeaveSkin = OptionLeaveSkin.GetBool();
         TpKillCooldownReset = OptionTpKillCooldownReset.GetBool();
         usecount = 0;
+        TeleportandKill = new();
+        LadderPatch.Ladder.Clear();
+        isAnimation = false;
+        CheckVentD.Clear();
     }
     enum OptionName
     {
         KillCooldown,
         Cooldown,
-        Ventgaaa,
-        Maximum,
+        MaximumT,
         Duration,
+        Jibakukei,
+        Ventgaaa,
+        PlatformFall,
+        LadderFall,
+        //ZiplineFall,
+        Dokkaaaan,
         //LeaveSkin,
         TpKillCooldownReset
     }
     static OptionItem OptionKillCoolDown;
     static OptionItem OptionCoolDown;
-    static OptionItem Optionventgaaa;
     static OptionItem OptionmMaximum;
     static OptionItem OptionDuration;
+    static OptionItem OptionJibakukei;
+    static OptionItem Optionventgaaa;
+    static OptionItem OptionPlatformFall;
+    static OptionItem OptionLadderFall;
+    //static OptionItem OptionZiplineFall;
+    static OptionItem OptionDokkaaaan;
     //static OptionItem OptionLeaveSkin;
     static OptionItem OptionTpKillCooldownReset;
     static float KillCooldown;
     static float Cooldown;
-    static bool Ventgaaa;
     static float Maximum;
     static int usecount;
     static float Duration;
+    static bool Ventgaaa; //↓ターゲットが使ってると自爆する系
+    static bool PlatformFall;
+    static bool LadderFall;
+    //static bool ZiplineFall;
+    static bool Dokkaaaan; //ターゲットが死んでいると自爆する
     //static bool LeaveSkin;
     static bool TpKillCooldownReset;
+    static List<byte> TeleportandKill;
+    static bool isAnimation;
+    static (Vector2, Vector2, float) AnimationData;
+    static Dictionary<byte, int> CheckVentD = new();
     private static void SetupOptionItem()
     {
         OptionKillCoolDown = FloatOptionItem.Create(RoleInfo, 10, OptionName.KillCooldown, new(2.5f, 180f, 2.5f), 30f, false)
             .SetValueFormat(OptionFormat.Seconds);
         OptionCoolDown = FloatOptionItem.Create(RoleInfo, 11, OptionName.Cooldown, new(2.5f, 180f, 2.5f), 30f, false)
             .SetValueFormat(OptionFormat.Seconds);
-        Optionventgaaa = BooleanOptionItem.Create(RoleInfo, 12, OptionName.Ventgaaa, false, false);
-        OptionmMaximum = FloatOptionItem.Create(RoleInfo, 13, OptionName.Maximum, new(0f, 999, 1f), 0f, false)
+        OptionmMaximum = FloatOptionItem.Create(RoleInfo, 12, OptionName.MaximumT, new(0f, 999, 1f), 0f, false)
             .SetValueFormat(OptionFormat.Times);
-        OptionDuration = FloatOptionItem.Create(RoleInfo, 14, OptionName.Duration, new(0f, 15, 1f), 5f, false)
+        OptionDuration = FloatOptionItem.Create(RoleInfo, 13, OptionName.Duration, new(0f, 15, 1f), 5f, false)
             .SetValueFormat(OptionFormat.Seconds);
+        OptionJibakukei = BooleanOptionItem.Create(RoleInfo, 14, OptionName.Jibakukei, false, false);
+        Optionventgaaa = BooleanOptionItem.Create(RoleInfo, 15, OptionName.Ventgaaa, false, false).SetParent(OptionJibakukei);
+        OptionPlatformFall = BooleanOptionItem.Create(RoleInfo, 16, OptionName.PlatformFall, false, false).SetParent(OptionJibakukei);
+        OptionLadderFall = BooleanOptionItem.Create(RoleInfo, 17, OptionName.LadderFall, false, false).SetParent(OptionJibakukei);
+        //OptionZiplineFall = BooleanOptionItem.Create(RoleInfo, 18, OptionName.ZiplineFall, false, false).SetParent(OptionJibakukei);
+        OptionDokkaaaan = BooleanOptionItem.Create(RoleInfo, 19, OptionName.Dokkaaaan, false, false).SetParent(OptionJibakukei);
         //OptionLeaveSkin = BooleanOptionItem.Create(RoleInfo, 15, OptionName.LeaveSkin, false, false);
-        OptionTpKillCooldownReset = BooleanOptionItem.Create(RoleInfo, 15, OptionName.TpKillCooldownReset, false, false);
+        OptionTpKillCooldownReset = BooleanOptionItem.Create(RoleInfo, 20, OptionName.TpKillCooldownReset, false, false);
     }
 
     public bool CanBeLastImpostor { get; } = false;
@@ -91,35 +121,141 @@ public sealed class TeleportKiller : RoleBase, IImpostor
     }
     public override void OnShapeshift(PlayerControl target)
     {
-        if (!AmongUsClient.Instance.AmHost || Player.PlayerId == target.PlayerId || !target.IsAlive() || (usecount >= Maximum && Maximum != 0)) return;
+        if (!AmongUsClient.Instance.AmHost || Player.PlayerId == target.PlayerId || (!target.IsAlive() && !Dokkaaaan) || (usecount >= Maximum && Maximum != 0)) return;
         usecount++;
         SendRPC();
         Logger.Info($"Player: {Player.name},Target: {target.name}, count: {usecount}", "TeleportKiller");
         _ = new LateTask(() =>
         {
-            var p = Player.transform.position;
-            RandomSpawn.TP(Player.NetTransform, target.transform.position);
-            if ((!target.inVent && Ventgaaa) || !target.MyPhysics.Animations.IsPlayingAnyLadderAnimation() || !target.UseMovingPlatform())
+            if (!target.IsAlive() && Dokkaaaan)
             {
-                RandomSpawn.TP(target.NetTransform, p);
+                Logger.Info($"ターゲットが生きてないから自爆☆ Killer:{Player.name} Target:{target.name}", "TeleportKiller");
+                PlayerState.GetByPlayerId(Player.PlayerId).DeathReason = CustomDeathReason.Bombed;
+                Player.RpcMurderPlayer(Player);
+                return;
             }
+            if (!TPCheck(target, true))
+            {
+                Logger.Info($"ターゲットはキル可能な状態ではないためキルがブロックされました Killer:{Player.name} Target:{target.name}", "TeleportKiller");
+                Player.RpcProtectedMurderPlayer();
+                if ((target.inVent || target.MyPhysics.Animations.IsPlayingEnterVentAnimation())
+                        && Ventgaaa)
+                {
+                    RandomSpawn.TP(Player.NetTransform, target.transform.position);
+                    PlayerState.GetByPlayerId(Player.PlayerId).DeathReason = CustomDeathReason.Bombed;
+                    Player.RpcMurderPlayer(Player, true);
+                    Logger.Info($"ターゲットがベントに入ってたせいでTPした時ベントに体があああ(自爆) Killer:{Player.name} Target:{target.name}", "TeleportKiller");
+                    return;
+                }
+                if (!target.IsAlive()) return;
+                Logger.Info($"キル待機中", "TeleportKiller");
+                TeleportandKill.Add(target.PlayerId);
+            }
+            else
+            {
+                TeleportKill(Player, target);
+            }
+        }, 1.5f, "TeleportKiller-1");
+    }
+    public static bool TPCheck(PlayerControl target, bool KillerTP = false)
+    {
+        if (target.MyPhysics.Animations.IsPlayingAnyLadderAnimation())
+        {
+            if (!KillerTP) return false;
+            return LadderFall;
+        }
+
+        if (target.inMovingPlat)
+        {
+            if (!KillerTP) return false;
+            return PlatformFall;
+        }
+
+        if (target.MyPhysics.Animations.IsPlayingEnterVentAnimation()
+                || target.inVent)
+        {
+            if (!KillerTP) return false;
+            return !Ventgaaa;
+        }
+
+        if (!target.IsAlive()) return false;
+
+        return true;
+    }
+
+    public static void TeleportKill(PlayerControl Player, PlayerControl target)
+    {
+        //キラーのTP
+        var p = Player.transform.position;
+        var check = TPCheck(target);
+        if ((target.inVent || target.MyPhysics.Animations.IsPlayingEnterVentAnimation()) && !Ventgaaa)
+        {
+            target.MyPhysics.RpcBootFromVent(CheckVentD[target.PlayerId]);
+            Logger.Info($"ベントでもキルするのだ", "TeleportKiller");
+            _ = new LateTask(() => TeleportandKill.Add(target.PlayerId), 1.5f);
+            check = false;
+        }
+        else
+        {
+            RandomSpawn.TP(Player.NetTransform, target.transform.position);
+        }
+        if (check)
+        {
+            //ターゲットのTP
+            RandomSpawn.TP(target.NetTransform, p);
             _ = new LateTask(() =>
             {
-                if (target.inVent && Ventgaaa)
+                if (!target.inVent && !target.MyPhysics.Animations.IsPlayingEnterVentAnimation())
                 {
-                    PlayerState.GetByPlayerId(Player.PlayerId).DeathReason = CustomDeathReason.Kill;
-                    Player.RpcMurderPlayer(Player, true);
-                }
-                else
-                {
-                    if (target.GetCustomRole().IsImpostor() || target.MyPhysics.Animations.IsPlayingAnyLadderAnimation() || target.UseMovingPlatform()) return;
+                    if (target.GetCustomRole().IsImpostor()) return;
                     PlayerState.GetByPlayerId(target.PlayerId).DeathReason = CustomDeathReason.Kill;
                     target.RpcMurderPlayer(target, true);
                     if (TpKillCooldownReset) Player.SetKillCooldown(KillCooldown);
                 }
             }, 0.5f, "TeleportKiller-2");
-        }, 1.5f, "TeleportKiller-1");
+        }
+
+        if (target.MyPhysics.Animations.IsPlayingAnyLadderAnimation() || target.inMovingPlat)
+        {
+            var start = Player.transform.position;
+            var goal = target.inMovingPlat ? (Vector2)Player.transform.position - new Vector2(0, 4) : new Vector2(Player.transform.position.x, LadderPatch.Ladder[target.PlayerId].y);
+            var t = 0.0f;
+            AnimationData = (start, goal, t);
+            isAnimation = true;
+        }
     }
+    public override void OnFixedUpdate(PlayerControl player)
+    {
+        if (!AmongUsClient.Instance.AmHost) return;
+        if (TeleportandKill.Count != 0)
+        {
+            foreach (var targetid in TeleportandKill)
+            {
+                var target = Utils.GetPlayerById(targetid);
+                if (TPCheck(target))
+                {
+                    TeleportKill(Player, target);
+                    TeleportandKill.Remove(targetid);
+                }
+            }
+        }
+        if (isAnimation)
+        {
+            var (start, goal, t) = AnimationData;
+            t += Time.deltaTime / 2.0f;
+            AnimationData.Item3 = (t > 1.0f) ? 1.0f : t; // 上限は1.0
+            RandomSpawn.TP(Player.NetTransform, Vector2.Lerp(start, goal, t));
+            if (t >= 1)
+            {
+                isAnimation = false;
+                PlayerState.GetByPlayerId(Player.PlayerId).DeathReason = CustomDeathReason.Fall;
+                Player.RpcMurderPlayer(Player, true);
+                Logger.Info($"TPした先には足場がぁ!? うあああ落ちるうう(落下死) Killer:{Player.name}", "TeleportKiller");
+            }
+        }
+    }
+
+    public static void CheckVent(PlayerControl pc, int id) => CheckVentD[pc.PlayerId] = id;
 
     public override string GetProgressText(bool comms = false) => Maximum == 0 ? "" : Utils.ColorString(Maximum >= usecount ? Color.red : Color.gray, $"({Maximum - usecount})");
 
@@ -131,5 +267,20 @@ public sealed class TeleportKiller : RoleBase, IImpostor
         //AURoleOptions.ShapeshifterLeaveSkin = LeaveSkin;
         AURoleOptions.ShapeshifterDuration = Duration;
         AURoleOptions.KillCooldown = KillCooldown;
+    }
+
+    [HarmonyPatch(typeof(PlayerPhysics), nameof(PlayerPhysics.ClimbLadder))]
+    class LadderPatch
+    {
+        public static Dictionary<byte, Vector2> Ladder = new();
+        public static void Postfix(PlayerPhysics __instance, Ladder source, byte climbLadderSid)
+        {
+            var sourcePos = source.transform.position;
+            var targetPos = source.Destination.transform.position;
+            if (sourcePos.y > targetPos.y)
+                Ladder[__instance.myPlayer.PlayerId] = targetPos;
+            else
+                Ladder[__instance.myPlayer.PlayerId] = sourcePos;
+        }
     }
 }

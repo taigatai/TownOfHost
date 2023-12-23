@@ -14,7 +14,7 @@ namespace TownOfHost.Roles.Neutral
                 CustomRoles.Remotekiller,
                 () => RoleTypes.Impostor,
                 CustomRoleTypes.Neutral,
-                50908,
+                50925,
                 SetupOptionItem,
                 "rk",
                 "#8f00ce",

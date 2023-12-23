@@ -188,7 +188,7 @@ public sealed class SchrodingerCat : RoleBase, IAdditionalWinner, IDeathReasonSe
         {
             candidates.Add(TeamType.Egoist);
         }
-        if (CustomRoles.Jackal.IsPresent())
+        if (CustomRoles.Jackal.IsPresent() || CustomRoles.JackalMafia.IsPresent())
         {
             candidates.Add(TeamType.Jackal);
         }
@@ -288,6 +288,7 @@ public sealed class SchrodingerCat : RoleBase, IAdditionalWinner, IDeathReasonSe
             TeamType.Crew => Utils.GetRoleColor(CustomRoles.Crewmate),
             TeamType.Jackal => Utils.GetRoleColor(CustomRoles.Jackal),
             TeamType.Egoist => Utils.GetRoleColor(CustomRoles.Egoist),
+            TeamType.Remotekiller => Utils.GetRoleColor(CustomRoles.Remotekiller),
             TeamType.CountKiller => Utils.GetRoleColor(CustomRoles.CountKiller),
             _ => null,
         };

@@ -105,18 +105,6 @@ public sealed class CountKiller : RoleBase, IKiller, ISchrodingerCatOwner
     }
     public void Win()
     {
-        foreach (var otherPlayer in Main.AllAlivePlayerControls)
-        {
-            if (otherPlayer.Is(CustomRoles.CountKiller))
-            {
-                continue;
-            }
-            otherPlayer.SetRealKiller(Player);
-            otherPlayer.RpcMurderPlayer(otherPlayer, true);
-            var playerState = PlayerState.GetByPlayerId(otherPlayer.PlayerId);
-            playerState.DeathReason = CustomDeathReason.Bombed;
-            playerState.SetDead();
-        }
         CustomWinnerHolder.ResetAndSetWinner(CustomWinner.CountKiller);
         CustomWinnerHolder.WinnerIds.Add(Player.PlayerId);
     }

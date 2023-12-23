@@ -36,16 +36,32 @@ namespace TownOfHost.Roles.Neutral
             CanVent = OptionCanVent.GetBool();
             CanUseSabotage = OptionCanUseSabotage.GetBool();
             HasImpostorVision = OptionHasImpostorVision.GetBool();
+            JackalCanKillMafia = OptionJJackalCanKillMafia.GetBool();
+            JackalCanAlsoBeExposedToJMafia = OptionJackalCanAlsoBeExposedToJMafia.GetBool();
+            MafiaCanAlsoBeExposedToJackal = OptionJMafiaCanAlsoBeExposedToJackal.GetBool();
+            CustomRoleManager.MarkOthers.Add(GetMarkOthers);
         }
 
         private static OptionItem OptionKillCooldown;
         public static OptionItem OptionCanVent;
         public static OptionItem OptionCanUseSabotage;
         private static OptionItem OptionHasImpostorVision;
+        private static OptionItem OptionJackalCanAlsoBeExposedToJMafia;
+        private static OptionItem OptionJMafiaCanAlsoBeExposedToJackal;
+        private static OptionItem OptionJJackalCanKillMafia;
         private static float KillCooldown;
         public static bool CanVent;
         public static bool CanUseSabotage;
         private static bool HasImpostorVision;
+        private static bool JackalCanAlsoBeExposedToJMafia;
+        private static bool MafiaCanAlsoBeExposedToJackal;
+        private static bool JackalCanKillMafia;
+        enum JackalOption
+        {
+            JackalCanAlsoBeExposedToJMafia,
+            MafiaCanAlsoBeExposedToJackal,
+            JackalCanKillMafia
+        }
         private static void SetupOptionItem()
         {
             OptionKillCooldown = FloatOptionItem.Create(RoleInfo, 10, GeneralOption.KillCooldown, new(2.5f, 180f, 2.5f), 30f, false)
@@ -53,7 +69,10 @@ namespace TownOfHost.Roles.Neutral
             OptionCanVent = BooleanOptionItem.Create(RoleInfo, 11, GeneralOption.CanVent, true, false);
             OptionCanUseSabotage = BooleanOptionItem.Create(RoleInfo, 12, GeneralOption.CanUseSabotage, false, false);
             OptionHasImpostorVision = BooleanOptionItem.Create(RoleInfo, 13, GeneralOption.ImpostorVision, true, false);
-        }
+            OptionJJackalCanKillMafia = BooleanOptionItem.Create(RoleInfo, 16, JackalOption.JackalCanKillMafia, false, false);
+            OptionJMafiaCanAlsoBeExposedToJackal = BooleanOptionItem.Create(RoleInfo, 14, JackalOption.MafiaCanAlsoBeExposedToJackal, false, false);
+            OptionJackalCanAlsoBeExposedToJMafia = BooleanOptionItem.Create(RoleInfo, 15, JackalOption.JackalCanAlsoBeExposedToJMafia, true, false);
+        }   //↑あってるかは知らない、
         public SchrodingerCat.TeamType SchrodingerCatChangeTo => SchrodingerCat.TeamType.Jackal;
         public float CalculateKillCooldown() => KillCooldown;
         public override void ApplyGameOptions(IGameOptions opt) => opt.SetVision(HasImpostorVision);
@@ -71,11 +90,27 @@ namespace TownOfHost.Roles.Neutral
             }
             return livingImpostorsNum <= 0;
         }
+        public override bool OnCheckMurderAsTarget(MurderInfo info)
+        {
+            (var killer, var target) = info.AttemptTuple;
+            if (killer.Is(CustomRoles.Jackal) && !JackalCanKillMafia)
+            {
+                info.CanKill = false;
+                return false;
+            }
+            return true;
+        }
         public override string GetMark(PlayerControl seer, PlayerControl seen, bool isForMeeting = false)
         {
             //seenが省略の場合seer
             seen ??= seer;
-            if (seen.Is(CustomRoles.Jackal)) return Utils.ColorString(RoleInfo.RoleColor, "★");
+            if (seer.PlayerId == Player.PlayerId && seen.Is(CustomRoles.Jackal) && MafiaCanAlsoBeExposedToJackal) return Utils.ColorString(RoleInfo.RoleColor, "★");
+            else return "";
+        }
+        public static string GetMarkOthers(PlayerControl seer, PlayerControl seen = null, bool isForMeeting = false)
+        {
+            seen ??= seer;
+            if (seer.Is(CustomRoles.Jackal) && seen.Is(CustomRoles.JackalMafia) && JackalCanAlsoBeExposedToJMafia) return Utils.ColorString(RoleInfo.RoleColor, "★");
             else return "";
         }
     }
