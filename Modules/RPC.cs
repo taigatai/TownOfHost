@@ -58,7 +58,6 @@ namespace TownOfHost
         public static bool Prefix(PlayerControl __instance, [HarmonyArgument(0)] byte callId, [HarmonyArgument(1)] MessageReader reader)
         {
             RpcCalls rpcType = (RpcCalls)callId;
-            Logger.Info(callId + rpcType + "RPCを受け取りました！", "RPC");
             Logger.Info($"{__instance?.Data?.PlayerId}({__instance?.Data?.PlayerName}):{callId}({RPC.GetRpcName(callId)})", "ReceiveRPC");
             MessageReader subReader = MessageReader.Get(reader);
             switch (rpcType)
@@ -130,7 +129,7 @@ namespace TownOfHost
                 case CustomRPC.SyncCustomSettings:
                     foreach (OptionItem co in OptionItem.AllOptions)
                         //すべてのカスタムオプションについてインデックス値で受信
-                        co.SetValue(reader.ReadInt32());
+                        co.SetValue(reader.ReadPackedInt32());
                     break;
                 case CustomRPC.SetDeathReason:
                     RPC.GetDeathReason(reader);
@@ -193,7 +192,7 @@ namespace TownOfHost
             MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(PlayerControl.LocalPlayer.NetId, (byte)CustomRPC.SyncCustomSettings, SendOption.Reliable, -1);
             foreach (OptionItem co in OptionItem.AllOptions)
                 //すべてのカスタムオプションについてインデックス値で送信
-                writer.Write(co.GetValue());
+                writer.WritePacked(co.GetValue());
             AmongUsClient.Instance.FinishRpcImmediately(writer);
         }
         public static void PlaySoundRPC(byte PlayerID, Sounds sound)

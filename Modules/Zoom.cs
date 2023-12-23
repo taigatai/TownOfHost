@@ -20,6 +20,8 @@ namespace TownOfHost
             {
                 HudManager.Instance.UICamera.orthographicSize = 3.0f;
                 Camera.main.orthographicSize = 3.0f;
+                HudManager.Instance.Chat.transform.localScale = Vector3.one; //チャットの位置を戻す 参考: TOH_Y https://github.com/Yumenopai/TownOfHost_Y/blob/main/Modules/Zoom.cs
+                if (GameStates.IsMeeting) MeetingHud.Instance.transform.localScale = Vector3.one;
             }
         }
     }

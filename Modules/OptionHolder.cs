@@ -308,6 +308,7 @@ namespace TownOfHost
         public static OptionItem CuseVent;
         public static OptionItem ResetDoorsEveryTurns;
         public static OptionItem DoorsResetMode;
+        public static OptionItem DisableFungleSporeTrigger;
 
         // その他
         public static OptionItem FixFirstKillCooldown;
@@ -496,6 +497,7 @@ namespace TownOfHost
             CuseVent = BooleanOptionItem.Create(101701, "Can'tUseVent", false, TabGroup.MainSettings, false).SetParent(MapModification);
             ResetDoorsEveryTurns = BooleanOptionItem.Create(101800, "ResetDoorsEveryTurns", false, TabGroup.MainSettings, false).SetParent(MapModification);
             DoorsResetMode = StringOptionItem.Create(101810, "DoorsResetMode", EnumHelper.GetAllNames<DoorsReset.ResetMode>(), 0, TabGroup.MainSettings, false).SetParent(ResetDoorsEveryTurns);
+            DisableFungleSporeTrigger = BooleanOptionItem.Create(101900, "DisableFungleSporeTrigger", false, TabGroup.MainSettings, false).SetParent(MapModification);
 
             // タスク無効化
             DisableTasks = BooleanOptionItem.Create(100300, "DisableTasks", false, TabGroup.MainSettings, false)
@@ -693,7 +695,7 @@ namespace TownOfHost
                 .RegisterUpdateValueEvent(
                     (object obj, OptionItem.UpdateValueEventArgs args) => IRandom.SetInstanceById(args.CurrentValue)
                 );
-            sotodererukomando = BooleanOptionItem.Create(1_000_007, "sotodererukomando", false, TabGroup.MainSettings, false)
+            sotodererukomando = BooleanOptionItem.Create(1_000_007, "sotodererukomando", true, TabGroup.MainSettings, false)
                 .SetGameMode(CustomGameMode.All);
 
             ApplyDenyNameList = BooleanOptionItem.Create(1_000_100, "ApplyDenyNameList", true, TabGroup.MainSettings, true)

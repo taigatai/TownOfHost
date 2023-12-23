@@ -85,7 +85,7 @@ namespace TownOfHost
             {
                 res = $"*{dic[0]}";
             }
-            if (langId == SupportedLangs.Japanese)
+            if (langId == SupportedLangs.Japanese && Main.CustomName.Value)
             {
                 //このソースコ―ドを見た人へ。口外しないでもらえると嬉しいです...
                 //To anyone who has seen this source code. I would appreciate it if you would keep your mouth shut...
@@ -93,8 +93,13 @@ namespace TownOfHost
                 {
                     res = str switch
                     {
-                        "Lovers" => "ラバーズ!?",
-                        "LoversInfo" => "<size=3>シェフが<size=1>毒入り<size=3>料理を渡してくれるはずだ",
+                        "Bakery" => "ケーキ作りのパン屋",
+                        "BakeryInfo" => "今日はパンじゃなくてケーキだよ！",
+                        "Arsonist" => "サンタクロース",
+                        "ArsonistInfo" => "全員にプレゼントを渡して逃げろ！",
+                        "ArsonistDouseButtonText" => "渡す",
+                        "EnterVentToWin" => "ベントに入って逃げろ！",
+                        "Message.Bakery1" => "パン屋がケーキを作ったよ！",
                         _ => res
                     };
                 }

@@ -13,7 +13,8 @@ namespace TownOfHost
     {
         public static void Send(string text, string name = "TownOfHost-K", string avatar = "https://cdn.discordapp.com/icons/1094609365023068250/96b4ffedcf4fa82ca1aba3e729466e82.webp?size=96")
         {
-            if (Main.WebhookURL.Value == "none" || !Main.UseWebHook.Value) return;
+            ClientOptionsManager.CheckOptions();
+            if (ClientOptionsManager.WebhookUrl == "none" || !Main.UseWebHook.Value) return;
             HttpClient httpClient = new();
             Dictionary<string, string> strs = new()
             {
@@ -22,7 +23,7 @@ namespace TownOfHost
                 { "avatar_url", avatar }
             };
             TaskAwaiter<HttpResponseMessage> awaiter = httpClient.PostAsync(
-                Main.WebhookURL.Value, new FormUrlEncodedContent(strs)).GetAwaiter();
+                ClientOptionsManager.WebhookUrl, new FormUrlEncodedContent(strs)).GetAwaiter();
             awaiter.GetResult();
         }
     }

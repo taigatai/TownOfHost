@@ -105,7 +105,7 @@ namespace TownOfHost
             }
             else
             {
-                Logger.Error($"ID:{id}が重複しています", "OptionItem");
+                Logger.Error($"ID:{id}が重複しています name:{name}", "OptionItem");
             }
         }
 
