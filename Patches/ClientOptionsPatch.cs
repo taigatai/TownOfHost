@@ -17,6 +17,7 @@ namespace TownOfHost
         private static ClientActionItem Yomiage;
         private static ClientActionItem UseZoom;
         private static ClientActionItem SyncYomiage;
+        private static ClientActionItem CustomName;
 
         public static void Postfix(OptionsMenuBehaviour __instance)
         {
@@ -64,6 +65,10 @@ namespace TownOfHost
             if (SyncYomiage == null || SyncYomiage.ToggleButton == null)
             {
                 SyncYomiage = ClientOptionItem.Create("SyncYomiage", Main.SyncYomiage, __instance);
+            }
+            if ((CustomName == null || CustomName.ToggleButton == null) && (Main.IsHalloween || Main.IsChristmas))
+            {
+                CustomName = ClientOptionItem.Create("CustomName", Main.CustomName, __instance);
             }
             if (ModUnloaderScreen.Popup == null)
             {

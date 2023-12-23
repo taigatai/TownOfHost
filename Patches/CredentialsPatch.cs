@@ -61,8 +61,9 @@ namespace TownOfHost
             {
                 TMPTemplate.SetBase(__instance.text);
                 Main.credentialsText = $"<color={Main.ModColor}>{Main.ModName}</color> v{Main.PluginVersion}";
+                Main.credentialsText += "\n<size=0>a</size>";
 #if DEBUG
-                Main.credentialsText += $"\n<color={Main.ModColor}>{ThisAssembly.Git.Branch}({ThisAssembly.Git.Commit})</color>";
+                Main.credentialsText += $"<color={Main.ModColor}>{ThisAssembly.Git.Branch}({ThisAssembly.Git.Commit})</color>";
 #endif
                 var credentials = TMPTemplate.Create(
                     "TOHCredentialsText",
@@ -71,7 +72,7 @@ namespace TownOfHost
                     alignment: TextAlignmentOptions.Right,
                     setActive: true);
                 credentials.transform.position = new Vector3(2.3419f, 2.1682f, -5f);
-                if (GameObject.Find("FilterSettings")) credentials.transform.position = new Vector3(5.0801f, -2.7173f, -5f);
+                if (GameObject.Find("FilterSettings")) credentials.transform.position = new Vector3(3.2438f, -2.8192f, 5f);
 
                 ErrorText.Create(__instance.text);
                 if (Main.hasArgumentException && ErrorText.Instance != null)
@@ -107,7 +108,7 @@ namespace TownOfHost
                 {
                     //このソースコ―ドを見た人へ。口外しないでもらえると嬉しいです...
                     //To anyone who has seen this source code. I would appreciate it if you would keep your mouth shut...
-                    SpecialEventText.text = "何とは言いませんが、特別な日ですね。\n<size=15%>\n\n末永く爆発しろ</size>";
+                    SpecialEventText.text = $"何とは言いませんが、特別な日ですね。\n<size=15%>\n\n末永く爆発しろ</size>\n<size=1><color={Main.ModColor}>↑それよりもう1年経つの早くない..?</size></color>";
                     SpecialEventText.color = Utils.GetRoleColor(CustomRoles.Lovers);
                 }
             }

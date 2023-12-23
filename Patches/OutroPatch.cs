@@ -242,7 +242,7 @@ namespace TownOfHost
             roleSummary.transform.localPosition = new(1.7f, -0.4f, 0f);
             roleSummary.transform.localScale = new Vector3(1.2f, 1.2f, 1f);
 
-            Utils.WH_ShowLastResult();
+            if (Main.UseWebHook.Value) Utils.WH_ShowLastResult();
 
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

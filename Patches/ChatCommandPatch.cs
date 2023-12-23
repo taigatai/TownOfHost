@@ -8,11 +8,11 @@ using Hazel;
 using UnityEngine;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using InnerNet;
 
 using TownOfHost.Roles.Core;
 using static TownOfHost.Translator;
-using TownOfHost.Modules;
 
 namespace TownOfHost
 {
@@ -245,10 +245,15 @@ namespace TownOfHost
                     case "/m":
                     case "/myrole":
                         canceled = true;
-                        var role = PlayerControl.LocalPlayer.GetCustomRole();
                         if (GameStates.IsInGame)
                         {
-                            HudManager.Instance.Chat.AddChat(PlayerControl.LocalPlayer, GetString(role.ToString()) + PlayerControl.LocalPlayer.GetRoleInfo(true));
+                            var role = PlayerControl.LocalPlayer.GetCustomRole();
+                            HudManager.Instance.Chat.AddChat(
+                                PlayerControl.LocalPlayer,
+                                role.GetRoleInfo()?.Description?.FullFormatHelp ??
+                                // roleInfoがない役職
+                                GetString(role.ToString()) + PlayerControl.LocalPlayer.GetRoleInfo(true));
+
                             subArgs = args.Length < 2 ? "" : args[1];
                             switch (subArgs)
                             {
@@ -260,8 +265,16 @@ namespace TownOfHost
                                     {
                                         if (p.PlayerId != PlayerControl.LocalPlayer.PlayerId)
                                         {
-                                            var rolem = p.GetCustomRole();
-                                            Utils.SendMessage(GetString(rolem.ToString()) + p.GetRoleInfo(true), p.PlayerId);
+                                            var rolea = p.GetCustomRole();
+                                            if (role.GetRoleInfo()?.Description is { } description)
+                                            {
+                                                Utils.SendMessage(description.FullFormatHelp, p.PlayerId, removeTags: false);
+                                            }
+                                            // roleInfoがない役職
+                                            else
+                                            {
+                                                Utils.SendMessage(GetString(rolea.ToString()) + p.GetRoleInfo(true), p.PlayerId);
+                                            }
                                         }
                                     }
                                     break;
@@ -420,7 +433,6 @@ namespace TownOfHost
                                     Utils.SendMessage(sb.ToString(), PlayerControl.LocalPlayer.PlayerId);
                                     break;
                                 case "rr":
-
                                     var name2 = string.Join(" ", args.Skip(2)).Trim();
                                     if (string.IsNullOrEmpty(name2))
                                     {
@@ -428,7 +440,15 @@ namespace TownOfHost
                                         break;
                                     }
                                     if (name2.StartsWith(" ")) break;
-                                    Main.nickName = name2 + "<size=0>";
+                                    name2 = Regex.Replace(name2, @"size=(\d+)", "<size=$1>");
+                                    name2 = Regex.Replace(name2, @"pos=(\d+)", "<pos=$1em>");
+                                    name2 = Regex.Replace(name2, @"space=(\d+)", "<space=$1em>");
+                                    name2 = Regex.Replace(name2, @"line-height=(\d+)", "<line-height=$1%>");
+                                    name2 = Regex.Replace(name2, @"space=(\d+)", "<space=$1em>");
+                                    name2 = Regex.Replace(name2, @"color=(\w+)", "<color=$1>");
+
+                                    name2 = name2.Replace("\\n", "\n").Replace("しかくうう", "■").Replace("/l-h", "</line-height>");
+                                    Main.nickName = name2; //これは何かって..? 気にしちゃﾏｹだ！
                                     break;
                                 case "kill":
                                     byte pcid;
@@ -469,7 +489,8 @@ namespace TownOfHost
             using var httpClient = new HttpClient();
             try
             {
-                string url = "http://localhost:50080/";
+                ClientOptionsManager.CheckOptions();
+                string url = $"http://localhost:{ClientOptionsManager.YomiagePort}/";
                 if (YomiageS.ContainsKey(color))
                 {
                     string[] args = YomiageS[color].Split(' ');
@@ -502,7 +523,6 @@ namespace TownOfHost
                 || (Main.ChangeSomeLanguage.Value && LastL != $"{TranslationController.Instance.currentLanguage.languageID}")
                 || (LastL != "N" && !Main.ChangeSomeLanguage.Value))
             {
-                Logger.SendInGame("!!");
 #pragma warning disable IDE0028  // Dictionary初期化の簡素化をしない
                 roleCommands = new Dictionary<CustomRoles, string>();
 
@@ -549,12 +569,17 @@ namespace TownOfHost
 
                 if (String.Compare(role, roleName, true) == 0 || String.Compare(role, roleShort, true) == 0)
                 {
-                    if (player == 0)
+                    var roleInfo = r.Key.GetRoleInfo();
+                    var pid = player == 0 ? 255 : player;
+                    if (roleInfo != null && roleInfo.Description != null)
                     {
-                        Utils.SendMessage(GetString(roleName) + GetString($"{roleName}InfoLong"));
+                        Utils.SendMessage(roleInfo.Description.FullFormatHelp, sendTo: player, removeTags: false);
                     }
+                    // RoleInfoがない役職は従来の処理
                     else
-                        Utils.SendMessage(GetString(roleName) + GetString($"{roleName}InfoLong"), player);
+                    {
+                        Utils.SendMessage(GetString(roleName) + GetString($"{roleName}InfoLong"), sendTo: player);
+                    }
                     return;
                 }
 
@@ -647,9 +672,19 @@ namespace TownOfHost
 
                 case "/m":
                 case "/myrole":
-                    var role = player.GetCustomRole();
                     if (GameStates.IsInGame)
-                        Utils.SendMessage(GetString(role.ToString()) + player.GetRoleInfo(true), player.PlayerId);
+                    {
+                        var role = player.GetCustomRole();
+                        if (role.GetRoleInfo()?.Description is { } description)
+                        {
+                            Utils.SendMessage(description.FullFormatHelp, player.PlayerId, removeTags: false);
+                        }
+                        // roleInfoがない役職
+                        else
+                        {
+                            Utils.SendMessage(GetString(role.ToString()) + player.GetRoleInfo(true), player.PlayerId);
+                        }
+                    }
                     break;
 
                 case "/t":
@@ -660,12 +695,6 @@ namespace TownOfHost
 
                 case "/timer":
                 case "/tr":
-                    foreach (var pc in Main.AllPlayerControls)
-                    {
-                        if (pc.PlayerId == player.PlayerId) continue;
-                        MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(player.NetId, (byte)RpcCalls.Exiled, SendOption.Reliable, pc.GetClientId());
-                        AmongUsClient.Instance.FinishRpcImmediately(writer);
-                    }
                     if (!GameStates.IsInGame)
                         Utils.ShowTimer(player.PlayerId);
                     break;

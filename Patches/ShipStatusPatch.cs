@@ -78,7 +78,7 @@ namespace TownOfHost
         {
             Logger.CurrentMethod();
             Logger.Info("-----------ゲーム開始-----------", "Phase");
-
+            if (GameStates.IsModHost && Main.UseWebHook.Value) Utils.WH_ShowActiveRoles();
             Utils.CountAlivePlayers(true);
         }
     }

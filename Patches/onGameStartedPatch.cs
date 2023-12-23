@@ -282,7 +282,7 @@ namespace TownOfHost
             }
             else
             {
-                foreach (var role in CustomRolesHelper.AllRoles.Where(x => x < CustomRoles.NotAssigned))
+                foreach (var role in CustomRolesHelper.AllStandardRoles)
                 {
                     if (role.IsVanilla()) continue;
                     if (CustomRoleManager.GetRoleInfo(role)?.IsDesyncImpostor == true) continue;
@@ -477,7 +477,7 @@ namespace TownOfHost
         public static int GetRoleTypesCount(RoleTypes roleTypes)
         {
             int count = 0;
-            foreach (var role in CustomRolesHelper.AllRoles.Where(x => x < CustomRoles.NotAssigned))
+            foreach (var role in CustomRolesHelper.AllRoles)
             {
                 if (CustomRoleManager.GetRoleInfo(role)?.IsDesyncImpostor == true) continue;
                 if (role == CustomRoles.Egoist && Main.NormalOptions.GetInt(Int32OptionNames.NumImpostors) <= 1) continue;

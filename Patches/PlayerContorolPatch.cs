@@ -12,6 +12,7 @@ using TownOfHost.Roles;
 using TownOfHost.Roles.Core;
 using TownOfHost.Roles.Core.Interfaces;
 using TownOfHost.Roles.Crewmate;
+using TownOfHost.Roles.Impostor;
 using TownOfHost.Roles.AddOns.Crewmate;
 
 namespace TownOfHost
@@ -398,6 +399,7 @@ namespace TownOfHost
                 }
             }
 
+
             //役職テキストの表示
             var RoleTextTransform = __instance.cosmetics.nameText.transform.Find("RoleText");
             var RoleText = RoleTextTransform.GetComponent<TMPro.TextMeshPro>();
@@ -618,6 +620,7 @@ namespace TownOfHost
                     return false;
                 }
                 VentMaster.OnEnterVent2(__instance, id);
+                TeleportKiller.CheckVent(__instance.myPlayer, id);
             }
             return true;
         }
@@ -762,6 +765,18 @@ namespace TownOfHost
                     // 名前を隠す
                     __instance.cosmetics.ToggleNameVisible(false);
                 }
+            }
+        }
+        [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.CheckSporeTrigger))]
+        public static class PlayerControlCheckSporeTriggerPatch
+        {
+            public static bool Prefix()
+            {
+                if (Options.DisableFungleSporeTrigger.GetBool())
+                {
+                    return false;
+                }
+                return true;
             }
         }
     }

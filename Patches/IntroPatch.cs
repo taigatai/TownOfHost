@@ -121,9 +121,8 @@ namespace TownOfHost
                     __instance.ImpostorText.text = role switch
                     {
                         CustomRoles.Egoist => GetString("TeamEgoist"),
-                        CustomRoles.Jackal => GetString("TeamJackal"),
+                        CustomRoles.Jackal or
                         CustomRoles.JackalMafia => GetString("TeamJackal"),
-                        CustomRoles.Debugger => " ",
                         _ => GetString("NeutralInfo"),
                     };
                     __instance.BackgroundBar.material.color = Utils.GetRoleColor(role);
@@ -148,6 +147,13 @@ namespace TownOfHost
                     break;
 
                 case CustomRoles.GM:
+                    __instance.TeamTitle.text = Utils.GetRoleName(role);
+                    __instance.TeamTitle.color = Utils.GetRoleColor(role);
+                    __instance.BackgroundBar.material.color = Utils.GetRoleColor(role);
+                    __instance.ImpostorText.gameObject.SetActive(false);
+                    break;
+
+                case CustomRoles.TaskPlayerB:
                     __instance.TeamTitle.text = Utils.GetRoleName(role);
                     __instance.TeamTitle.color = Utils.GetRoleColor(role);
                     __instance.BackgroundBar.material.color = Utils.GetRoleColor(role);
