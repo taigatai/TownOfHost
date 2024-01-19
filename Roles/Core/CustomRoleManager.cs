@@ -389,6 +389,7 @@ public enum CustomRoles
     Bomber,
     TeleportKiller,
     AntiReporter,
+    Tairou,
     //Madmate
     MadGuardian,
     Madmate,

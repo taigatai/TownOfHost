@@ -141,7 +141,7 @@ public sealed class TeleportKiller : RoleBase, IImpostor
                 if ((target.inVent || target.MyPhysics.Animations.IsPlayingEnterVentAnimation())
                         && Ventgaaa)
                 {
-                    RandomSpawn.TP(Player.NetTransform, target.transform.position);
+                    Player.RpcSnapTo(target.transform.position);
                     PlayerState.GetByPlayerId(Player.PlayerId).DeathReason = CustomDeathReason.Bombed;
                     Player.RpcMurderPlayer(Player, true);
                     Logger.Info($"ターゲットがベントに入ってたせいでTPした時ベントに体があああ(自爆) Killer:{Player.name} Target:{target.name}", "TeleportKiller");
@@ -197,12 +197,12 @@ public sealed class TeleportKiller : RoleBase, IImpostor
         }
         else
         {
-            RandomSpawn.TP(Player.NetTransform, target.transform.position);
+            Player.RpcSnapTo(target.transform.position);
         }
         if (check)
         {
             //ターゲットのTP
-            RandomSpawn.TP(target.NetTransform, p);
+            target.RpcSnapTo(p);
             _ = new LateTask(() =>
             {
                 if (!target.inVent && !target.MyPhysics.Animations.IsPlayingEnterVentAnimation())
@@ -244,7 +244,7 @@ public sealed class TeleportKiller : RoleBase, IImpostor
             var (start, goal, t) = AnimationData;
             t += Time.deltaTime / 2.0f;
             AnimationData.Item3 = (t > 1.0f) ? 1.0f : t; // 上限は1.0
-            RandomSpawn.TP(Player.NetTransform, Vector2.Lerp(start, goal, t));
+            Player.RpcSnapTo(Vector2.Lerp(start, goal, t));
             if (t >= 1)
             {
                 isAnimation = false;

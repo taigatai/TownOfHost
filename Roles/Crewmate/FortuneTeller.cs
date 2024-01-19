@@ -49,7 +49,7 @@ public sealed class FortuneTeller : RoleBase
     public bool srole;
     int count;
     bool uranaimode;
-    List<byte> Divination = new();
+    Dictionary<byte, CustomRoles> Divination = new();
 
     enum Option
     {
@@ -79,6 +79,7 @@ public sealed class FortuneTeller : RoleBase
         sender.Writer.Write(count);
         using var sender2 = CreateSender(CustomRPC.SetFTtarget);
         sender2.Writer.Write(targetid);
+        sender2.Writer.WritePacked((int)Utils.GetPlayerById(targetid).GetCustomRole());
     }
     public override void ReceiveRPC(MessageReader reader, CustomRPC rpcType)
     {
@@ -88,18 +89,18 @@ public sealed class FortuneTeller : RoleBase
         }
         else if (rpcType == CustomRPC.SetFTtarget)
         {
-            Divination.Add(reader.ReadByte());
+            Divination[reader.ReadByte()] = (CustomRoles)reader.ReadPackedInt32();
         }
         else return;
     }
     public override string GetSuffix(PlayerControl seer, PlayerControl seen = null, bool isForMeeting = false)
     {
         seen ??= seer;
-        if (Divination.Contains(seen.PlayerId) && rolename)
+        if (Divination.ContainsKey(seen.PlayerId) && rolename)
         {
             if (srole)
-                return $"<color={Utils.GetRoleColorCode(seen.GetCustomRole())}>" + GetString(seen.GetCustomRole().ToString());
-            else return GetString(seen.GetCustomRole().GetCustomRoleTypes().ToString());
+                return $"<color={Utils.GetRoleColorCode(Divination[seen.PlayerId])}>" + GetString(Divination[seen.PlayerId].ToString());
+            else return GetString(Divination[seen.PlayerId].GetCustomRoleTypes().ToString());
         }
         return "";
     }
@@ -149,11 +150,12 @@ public sealed class FortuneTeller : RoleBase
     public void Uranai(byte votedForId)
     {
         count++;
-        SendRPC(votedForId);
-        Divination.Add(votedForId);
         Logger.Info($"Player: {Player.name},Target: {votedForId}, count: {count}", "FortuneTeller");
-        var role = Utils.GetPlayerById(votedForId).GetCustomRole();
+        var target = Utils.GetPlayerById(votedForId);
+        var role = target.GetCustomRole() is CustomRoles.Tairou ? CustomRoles.Crewmate : target.GetCustomRole();
         var s = "";
+        Divination[votedForId] = role;
+        SendRPC(votedForId);
         if (role.IsCrewmate()) s = "です！";
         else s = "です...";
         Utils.SendMessage(Utils.GetPlayerById(votedForId).name + "さんを占いました。\n結果は.." + (srole ? GetString($"{role}") : GetString($"{role.GetCustomRoleTypes()}")) + s + $"\n\n残り{Max - count}回占うことができます", Player.PlayerId);
