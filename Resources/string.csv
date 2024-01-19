@@ -37,6 +37,7 @@
 "TeleportKiller","TeleportKiller","テレポートキラー","瞬移杀手","瞬移殺手","Убийца телепортов","Assassino de teletransporte",""
 "Bomber","Bomber","爆弾魔","炸弹恶魔","炸彈惡魔","Демон-бомба","Demônio da bomba",""
 "AntiReporter","AntiReporter","アンチレポーター","反报告器","反報告器","Анти-Репортер","Anti-Repórter",""
+"Tairou","","大狼","","","","",""
 
 "# マッドメイト系役職"
 "Madmate","Madmate","マッドメイト","叛徒","叛徒","Безумец","Tripulante Louco","Tripulante Louco"
@@ -143,6 +144,7 @@
 "AntiReporterInfo","I won't let you report a corpse!","死体通報はさせないぞ！","我不会让你举报尸体的！","我不會讓你舉報屍體的！","Я не позволю вам сообщить о трупе!","Eu não vou deixar você denunciar um cadáver!",""
 "TeleportKillerInfo","Teleport to you!","君のもとへテレポート！","传送到你身边！","傳送到你身邊！","Телепортируйтесь к вам!","Teletransporte para você!",""
 "BomberInfo","Art is a blast","芸術は爆発だ","艺术是一种爆炸","藝術是一種爆炸","Искусство - это взрыв","A arte é uma explosão",""
+"TairouInfo","","クルーを惑わせ！","","","","",""
 
 "# マッドメイト系役職"
 "MadmateInfo","Help the Impostors","インポスターの援助をしよう","帮助内鬼","幫助偽裝者","Помогите Предателям","Ajude os Impostores","Ajude os Impostores"
@@ -229,6 +231,7 @@
 "BomberInfoLong","(Impostors):\n","(インポスター陣営):\nシェイプ後名前に◆がついてる状態で\nキルをすると対象に爆弾が付与される。\n爆弾は一定時間経過すると爆発し、対象と対象の近くにいた人は死亡する。\n爆弾が爆発する前に会議が始まると爆発しない。","","","","",""
 "AntiReporterInfoLong","(Impostors):\n","(インポスター陣営):\n変身した後にキルボタンを押すことで、対象を死体通報出来なくすることができる。","","","","",""
 "TeleportKillerInfoLong","(Impostors):\n","(インポスター陣営):\n変身することでシェイプシフトで選んだ人をキルできる。この時、対象の場所へテレポートし対象は変身した場所へ死体となる。","","","","",""
+"TairouInfoLong","","(インポスター陣営):\nシェリフに切られるとシェリフが誤爆する。\n占い師に占われてもクルーと表示される。\n但し占い設定の名前の上に結果を残す設定がある時はインポスターor大狼と表示される(占った次のターン)","","","","",""
 
 "# マッドメイト系役職"
 "MadmateInfoLong","(Impostors):\nYou are a crewmate, but you act as the impostors' ally.\nYou and the impostors cannot recognize each other.\nYou can vent, and you have no tasks.","(インポスター陣営):\nクルーだがインポスターの味方をする。\nインポスターと互いに認識できない。\nベントが使え、タスクはない。","(内鬼阵营):\n叛徒伪装成船员来帮助内鬼阵营，但是他们并不知道谁是内鬼。\n叛徒不可以进行击杀或者破坏，可以跳管道且没有任务。","(偽裝者陣營):\n叛徒屬於偽裝者陣營。\n偽裝者無法知道叛徒是誰，他可以使用通風口且沒有任務。","(Предатель):\nЧлен Экипажа, который на стороне Предателей. \nНо он не знает кто является Предателем в игре. \nМожет использовать вентиляцию, но нет заданий.","(Impostores):\nVocê é um tripulante que se aliou ao impostor.\nOs Impostores não sabem quem você é e vice-versa.\nPode usar a ventilação, e não tem tarefas.","(Impostores):\nVocê é um tripulante que se aliou ao impostor.\nOs Impostores não sabem quem você é e vice-versa.\nPode usar a ventilação, e não tem tarefas."
@@ -611,6 +614,8 @@
 "SabotageTimeControl","Sabotage Duration Control","サボタージュの時間制御","更改修理时限","重新設定緊急任務時間","Изменить время саботажа","Controle da Duração de Sabotagem",""
 "PolusReactorTimeLimit","Polus Reactor Duration","ポーラスのリアクター制限時間","波鲁斯抗震稳定器修理时限","Polus地震抑制器破壞最大時間","Polus время саботажа Реактора","Duração do Reator em Polus",""
 "AirshipReactorTimeLimit","Airship Reactor Duration","エアシップのリアクター制限時間","飞艇坠毁路线修理时限","Airship間隙室破壞最大時間","Airship время саботажа Реактора","Duração do Reator em Airship",""
+"FungleReactorTimeLimit","Fungle Reactor Duration","ファングルのリアクター制限時間","反应堆时间限制（蘑菇岛地图）","","Время саботажа Реактора на The Fungle","",""
+"FungleMushroomMixupDuration","Fungle Mushroom Mixup Duration","ファングルのキノコカオス効果時間","蘑菇混合持续时间（蘑菇岛地图）","","Длительность грибного переполоха на The Fungle","",""
 
 "## サボタージュのクールダウン変更"
 "ModifySabotageCooldown","Sabotage Cooldown Control","サボタージュのクールダウン制御","","","Контролировать откат саботажа","Controle do Tepo de Recarga da Sabotagem",""

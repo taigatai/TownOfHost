@@ -282,6 +282,14 @@ TOHK_DATAフォルダの中にあるoptions.txt<br>
 |------------------------- |
 |タスクスターのタスク数    |
 
+### Tariou/大狼
+陣営：インポスター<br>
+判定：インポスター<br>
+カウント：インポスター<br>
+
+シェリフが大狼をキルとシェリフが誤爆する。<br>
+また、占い師が大狼を占ってもクルーメイトと表示される
+
 ### Lovers/恋人
 
 [役職の説明はこちら](https://github.com/tukasa0001/TownOfHost/blob/main/README.md#lovers%E6%81%8B%E4%BA%BA)

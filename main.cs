@@ -50,9 +50,9 @@ namespace TownOfHost
         // ==========
         //Sorry for many Japanese comments.
         public const string PluginGuid = "com.kymario.townofhost-k";
-        public const string PluginVersion = "5.1.31";
+        public const string PluginVersion = "5.1.45";
         // サポートされている最低のAmongUsバージョン
-        public static readonly string LowestSupportedVersion = "2023.10.24";
+        public static readonly string LowestSupportedVersion = "2023.11.28";
         // このバージョンのみで公開ルームを無効にする場合
         public static readonly bool IsPublicAvailableOnThisVersion = false;
         public Harmony Harmony { get; } = new Harmony(PluginGuid);
@@ -103,7 +103,7 @@ namespace TownOfHost
         public static bool isLoversDead = true;
         public static Dictionary<byte, float> AllPlayerKillCooldown = new();
         public static bool HnSFlag = false;
-        public static bool TaskBattleOptionv = false;
+        //public static bool TaskBattleOptionv = false;
 
         /// <summary>
         /// 基本的に速度の代入は禁止.スピードは増減で対応してください.
