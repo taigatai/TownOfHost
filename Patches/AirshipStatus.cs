@@ -13,9 +13,10 @@ namespace TownOfHost
         {
             if (PlayerControl.LocalPlayer.Is(CustomRoles.GM))
             {
-                if (PlayerControl.LocalPlayer.transform.position == new Vector3(-25f, 40f, 0.04f) && Main.NormalOptions.MapId == 4)
-                    RandomSpawn.TP(PlayerControl.LocalPlayer.NetTransform, new Vector2(0f, 0f));
-                return false; // GMは湧き画面をスキップ
+                RandomSpawn.hostReady = true;
+                RandomSpawn.AirshipSpawn(PlayerControl.LocalPlayer);
+                // GMは湧き画面をスキップ
+                return false;
             }
             return true;
         }

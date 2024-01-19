@@ -20,6 +20,7 @@ namespace TownOfHost
         public static SimpleButton UpdateButton { get; private set; }
         public static SimpleButton UpdateButton2;
         private static SimpleButton gitHubButton;
+        private static SimpleButton TwitterXButton;
         public static AnnouncementPopUp updatea;
 
         [HarmonyPatch(nameof(MainMenuManager.Start)), HarmonyPostfix, HarmonyPriority(Priority.Normal)]
@@ -31,7 +32,7 @@ namespace TownOfHost
             {
                 discordButton = CreateButton(
                     "DiscordButton",
-                    new(-1f, -1f, 1f),
+                    new(-2f, -1f, 1f),
                     new(88, 101, 242, byte.MaxValue),
                     new(148, 161, byte.MaxValue, byte.MaxValue),
                     () => Application.OpenURL(Main.DiscordInviteUrl),
@@ -44,11 +45,23 @@ namespace TownOfHost
             {
                 gitHubButton = CreateButton(
                     "GitHubButton",
-                    new(1f, -1f, 1f),
+                    new(2f, -1f, 1f),
                     new(153, 153, 153, byte.MaxValue),
                     new(209, 209, 209, byte.MaxValue),
                     () => Application.OpenURL("https://github.com/KYMario/TownOfHost-K"),
                     "GitHub");
+            }
+
+            // TwitterXボタンを生成
+            if (SimpleButton.IsNullOrDestroyed(TwitterXButton))
+            {
+                TwitterXButton = CreateButton(
+                    "TwitterXButton",
+                    new(0f, -1f, 1f),
+                    new(0, 202, 255, byte.MaxValue),
+                    new(60, 255, 255, byte.MaxValue),
+                    () => Application.OpenURL("https://twitter.com/Tohkserver_k"),
+                    "Twitter(X)");
             }
 
             //Updateボタンを生成
@@ -213,6 +226,18 @@ namespace TownOfHost
                         ShortTitle = "◆TOH-K v5.1.31",
                         Text = "TOH v5.1.3への対応\nテレポートキラーに自爆設定が追加されたよ!\n (ターゲットが)ベントやぬーん、梯子を使っている時自爆する設定を追加したのだ！\n次はジャッカルマフィア!\n ジャッカルがｼﾞｬｯｶﾙﾏﾌｨｱを視認できるか(その逆も)\n ジャッカルがｼﾞｬｯｶﾙﾏﾌｨｱをキルできるかも設定できるようになったよぉ\nあと参加者がタイマーコマンド使うと霊界送りにされるﾔﾊﾞｲﾔﾂも直したのだ",
                         Date = "2023-12-23T00:00:00Z"
+                    };
+                    AllModNews.Add(news);
+                }
+                {
+                    var news = new ModNews
+                    {
+                        Number = 100004,
+                        Title = "ハッピーニューイヤー",
+                        SubTitle = "Town Of Host-K v5.1.45",
+                        ShortTitle = "◆TOH-K v5.1.45",
+                        Text = "TOH v5.1.4への対応\nメインメニューにX(Twitter)のボタンを追加したよ！\n是非フォローよろしくね^^(乞食)\nそして新役職！大狼の追加!!\nシェリフが大狼をキルとシェリフが誤爆する。\nまた、占い師が大狼を占ってもクルーメイトと表示される!\n新ゲームモード タスクバトル解放！\nタスクを誰よりも早く終わらせよう\nボタンが押せなく、インポスターがいないモードです\nタスクを全て終わらせると自動でゲームが終了します\n (実はv5.1.14から隠しコマンドとしてあったり..)\n\nそしてこれがほぼGithubのと同じになってる..\nってことでいつも通りここになにか書いときます((\n今回のアプデ、kyは..\n\n\n\n\n\nタスクバトルの解放以外なにもしていない!!(((殴\nﾀﾞｯﾃ!ﾀﾞﾚﾓkﾔｯﾃｸﾝﾅｲｼﾞｬﾝ!!(((\n\nてかﾊｯﾋﾟｰﾆｭｰｲﾔｰってもう遅かったりする..?",
+                        Date = "2024-01-19T00:00:00Z"
                     };
                     AllModNews.Add(news);
                 }

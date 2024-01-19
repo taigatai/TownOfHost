@@ -327,7 +327,7 @@ namespace TownOfHost
                         foreach (var tp in Main.AllPlayerControls)
                         {
                             Vector2 position = new(0.0f, 0.0f);
-                            RandomSpawn.TP(tp.NetTransform, position);
+                            tp.RpcSnapTo(position);
                         }
                         break;
 
@@ -706,11 +706,11 @@ namespace TownOfHost
                     {
                         case "o":
                             Vector2 position = new(3.0f, 0.0f);
-                            RandomSpawn.TP(player.NetTransform, position);
+                            player.RpcSnapTo(position);
                             break;
                         case "i":
                             Vector2 position2 = new(0.0f, 0.0f);
-                            RandomSpawn.TP(player.NetTransform, position2);
+                            player.RpcSnapTo(position2);
                             break;
 
                     }

@@ -77,10 +77,10 @@ namespace TownOfHost
             {
                 Utils.OpenDirectory(System.Environment.CurrentDirectory);
             }
-            if (GetKeysDown(KeyCode.T, KeyCode.B) && !Main.TaskBattleOptionv)
+            /*if (GetKeysDown(KeyCode.T, KeyCode.B) && !Main.TaskBattleOptionv)
             {
                 Main.TaskBattleOptionv = true; //隠しゲームモード 気づけた方おめ！ 全然使っていいよ！いつか普通にできるようにするから、いまのうちに友達に自慢しｙ((((
-            }
+            }*/
 
             //--以下ホスト専用コマンド--//
             if (!AmongUsClient.Instance.AmHost) return;
