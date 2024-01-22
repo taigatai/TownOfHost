@@ -1,6 +1,6 @@
-# Town Of Host-K
+# Town Of Host-K-Yrp
 
-# [DiscordServer](https://discord.gg/5DPqH8seFq)
+# [DiscordServer](https://discord.gg/kevXDW9bcF)
 
 <p align="center"><a href="https://github.com/KYMario/TownOfHost-K/releases/"><img src="https://badgen.net/github/release/KYMario/TownOfHost-K"></a></p>
 
@@ -8,19 +8,16 @@
 
 この Mod は非公式のものであり、この Mod の開発に関して Among Us の開発元である"Innersloth"は一切関与していません。<br>
 この Mod の問題などに関して公式に問い合わせないでください。<br>
+ちなみにリリースする気はあまりないです。<br>
 
 この Mod はTOHに役職や機能など追加したModです
-TOH-Kで起きたバグは本家や他MODには報告しないでまずはkに報告してください。
+TOH-K-Yrpで起きたバグは本家や他MODには報告しないでまずはYrp開発者に報告してください。
 
 [本家TOHはこちら](https://github.com/tukasa0001/TownOfHost) TOH-k以外の説明を省いているので本家の役職などはこちらから
-
+[TOH-Kはこっち](https://github.com/KYMario/TownOfHost-K)
 ## リリース
 
 AmongUsバージョン : **2023.11.28**<br>
-
-**最新版は[こちら](https://github.com/KYMario/TownOfHost-K/releases/latest)**
-
-過去バージョンは[こちら](https://github.com/KYMario/TownOfHost-K/releases)
 
 ## 機能
 ### ホットキー
