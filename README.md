@@ -80,3 +80,5 @@ TOH-Kにあった案使いました。m(__)m
 [Town Of Host-H](https://github.com/Hyz-sui/TownOfHost-H) 10.24アプデの対応
 
 [SuperNewRoles](https://github.com/ykundesu/SuperNewRoles) 役職など
+
+協力者：ky様
